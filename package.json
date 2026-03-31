@@ -1,6 +1,6 @@
 {
   "name": "acc-server-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ACC Server Manager — ACC 服务器配置与部署工具",
   "author": "Hwangzhun",
   "repository": {

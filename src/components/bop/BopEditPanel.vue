@@ -79,8 +79,8 @@
               <div class="label-right">
                 <el-input-number
                   v-model="formData.ballastKg"
-                  :min="-100"
-                  :max="100"
+                  :min="-40"
+                  :max="40"
                   :step="1"
                   controls-position="right"
                   size="small"
@@ -97,8 +97,8 @@
           </template>
           <el-slider
             v-model="formData.ballastKg"
-            :min="-100"
-            :max="100"
+            :min="-40"
+            :max="40"
             :step="1"
             :color="getBallastColor(formData.ballastKg)"
           />

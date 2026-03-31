@@ -56,7 +56,7 @@
             <FieldDescription config-name="bop" field-name="carModel" />
           </el-form-item>
           <el-form-item label="配重(kg)">
-            <el-input-number v-model="bopEntry.ballastKg" :min="-100" :max="100" />
+            <el-input-number v-model="bopEntry.ballastKg" :min="-40" :max="40" />
             <FieldDescription config-name="bop" field-name="ballastKg" />
           </el-form-item>
           <el-form-item label="进气限制器(%)">
