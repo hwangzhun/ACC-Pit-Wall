@@ -1,0 +1,5 @@
+node_modules
+dist
+
+# LFM BOP 缓存
+server/cache/

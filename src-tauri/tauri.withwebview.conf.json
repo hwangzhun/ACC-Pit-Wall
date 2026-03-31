@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ACC Server Manager",
+  "version": "1.0.0",
+  "identifier": "com.acc.config-generator",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "ACC Server Manager",
+        "width": 1400,
+        "height": 900,
+        "devtools": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "resources": [
+      "../acc-server.zip"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      }
+    }
+  },
+  "plugins": {}
+}
