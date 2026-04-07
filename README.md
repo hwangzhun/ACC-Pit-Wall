@@ -1,6 +1,6 @@
 # ACC 赛事服务器配置工具 (ACC Pitwall)
 
-![Logo](https://cdn.jsdelivr.net/gh/hwangzhun/ACC-Pit-Wall@main/src/assets/logo-horizontal-g.svg)
+![Logo](https://cdn.jsdelivr.net/gh/hwangzhun/ACC-Pit-Wall@main/src/assets/logo-horizontal-black.svg)
 
 <div align="center">
 
