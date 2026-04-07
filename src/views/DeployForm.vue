@@ -141,7 +141,7 @@
           :icon="Upload"
           :loading="uploadingConfig"
           :disabled="!isConnected || startingServer || stoppingServer || serverRunning"
-          @click="handleUploadConfig"
+          @click="openUploadConfigConfirm"
         >
           {{ uploadingConfig ? configUploadStatus : t('deploy.uploadConfig') }}
         </el-button>
@@ -251,18 +251,213 @@
         <el-button type="primary" @click="handleRenameServer">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="uploadConfirmVisible"
+      :title="t('deploy.uploadConfirmTitle')"
+      width="680px"
+      destroy-on-close
+      align-center
+      class="upload-config-confirm-dialog"
+    >
+      <el-alert
+        class="upload-confirm-alert"
+        type="info"
+        :closable="false"
+        show-icon
+      >
+        {{ t('deploy.uploadConfirmDescription') }}
+      </el-alert>
+
+      <div class="upload-summary-scroll">
+        <div class="upload-summary-hero">
+          <div class="hero-label">{{ t('form.track') }}</div>
+          <div class="hero-track">{{ trackDisplayName }}</div>
+          <div class="hero-tags">
+            <el-tag type="primary" effect="dark" round>{{ configs.settings.carGroup }}</el-tag>
+            <el-tag type="primary" effect="plain" round>
+              {{ t('form.maxCarSlots') }} · {{ configs.settings.maxCarSlots }}
+            </el-tag>
+            <el-tag type="success" effect="plain" round>
+              {{ t('form.maxConnections') }} · {{ configs.configuration.maxConnections }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="upload-summary-panel">
+          <div class="panel-head">
+            <el-icon class="panel-head-icon"><Medal /></el-icon>
+            <span>{{ t('form.ratingRequirements') }}</span>
+          </div>
+          <div class="panel-body kv-grid kv-grid-auto">
+            <div class="kv kv-highlight">
+              <span class="kv-label">{{ t('form.trackMedalsRequirement') }}</span>
+              <span class="kv-value">{{ trackMedalsLabel }}</span>
+            </div>
+            <div class="kv kv-highlight">
+              <span class="kv-label">{{ t('form.safetyRatingRequirement') }}</span>
+              <span class="kv-value">{{ configs.settings.safetyRatingRequirement }}</span>
+            </div>
+            <div class="kv kv-highlight">
+              <span class="kv-label">{{ t('form.racecraftRatingRequirement') }}</span>
+              <span class="kv-value">{{ configs.settings.racecraftRatingRequirement }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-summary-panel">
+          <div class="panel-head">
+            <el-icon class="panel-head-icon"><PartlyCloudy /></el-icon>
+            <span>{{ t('form.trackAndWeather') }}</span>
+          </div>
+          <div class="panel-body">
+            <div class="weather-track-line">
+              <el-icon><Location /></el-icon>
+              <span class="weather-track-name">{{ trackDisplayName }}</span>
+            </div>
+            <div class="kv-grid kv-grid-weather">
+              <div class="kv">
+                <span class="kv-label">{{ t('form.ambientTemp') }}</span>
+                <span class="kv-value">{{ configs.event.ambientTemp }}°C</span>
+              </div>
+              <div class="kv kv-wide">
+                <span class="kv-label">{{ t('form.cloudLevel') }}</span>
+                <span class="kv-value kv-value-muted">{{ cloudLevelSummary }}</span>
+              </div>
+              <div class="kv kv-wide">
+                <span class="kv-label">{{ t('form.rain') }}</span>
+                <span class="kv-value kv-value-muted">{{ rainSummary }}</span>
+              </div>
+              <div class="kv kv-wide">
+                <span class="kv-label">{{ t('form.weatherRandomness') }}</span>
+                <span class="kv-value kv-value-muted">{{ weatherRandomnessSummary }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-summary-panel">
+          <div class="panel-head">
+            <el-icon class="panel-head-icon"><Calendar /></el-icon>
+            <span>{{ t('form.sessions') }}</span>
+          </div>
+          <div class="panel-body session-cards">
+            <div
+              v-for="(session, idx) in configs.event.sessions"
+              :key="idx"
+              class="session-card"
+              :data-session-type="session.sessionType"
+            >
+              <div class="session-card-title">{{ sessionBlockTitle(session.sessionType, idx) }}</div>
+              <div class="session-card-chips">
+                <span class="session-chip">{{ sessionTypeLabel(session.sessionType) }}</span>
+                <span class="session-chip">{{ dayOfWeekendLabel(session.dayOfWeekend) }}</span>
+                <span class="session-chip">{{ session.hourOfDay }}:00</span>
+                <span class="session-chip">{{ t('form.sessionDurationMinutes') }} {{ session.sessionDurationMinutes }}</span>
+                <span class="session-chip">×{{ session.timeMultiplier }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-summary-panel upload-summary-panel--rules">
+          <div class="panel-head">
+            <el-icon class="panel-head-icon"><Operation /></el-icon>
+            <span>{{ t('nav.eventRules') }}</span>
+          </div>
+          <div class="panel-body">
+            <div class="rules-numbers">
+              <div class="kv">
+                <span class="kv-label">{{ t('form.pitWindowLengthSec') }}</span>
+                <span class="kv-value">{{ configs.eventRules.pitWindowLengthSec }}</span>
+              </div>
+              <div class="kv">
+                <span class="kv-label">{{ t('form.driverStintTimeSec') }}</span>
+                <span class="kv-value">{{ configs.eventRules.driverStintTimeSec }}</span>
+              </div>
+              <div class="kv">
+                <span class="kv-label">{{ t('form.mandatoryPitstopCount') }}</span>
+                <span class="kv-value">{{ configs.eventRules.mandatoryPitstopCount }}</span>
+              </div>
+              <div class="kv">
+                <span class="kv-label">{{ t('form.maxTotalDrivingTime') }}</span>
+                <span class="kv-value">{{ configs.eventRules.maxTotalDrivingTime }}</span>
+              </div>
+              <div class="kv">
+                <span class="kv-label">{{ t('form.maxDriversCount') }}</span>
+                <span class="kv-value">{{ configs.eventRules.maxDriversCount }}</span>
+              </div>
+              <div class="kv">
+                <span class="kv-label">{{ t('form.tyreSetCount') }}</span>
+                <span class="kv-value">{{ configs.eventRules.tyreSetCount }}</span>
+              </div>
+            </div>
+            <div class="rules-bool-title">{{ t('deploy.summaryRuleSwitches') }}</div>
+            <div class="rules-bool-grid">
+              <div class="rules-bool-row">
+                <span class="rules-bool-label">{{ t('form.isRefuellingAllowedInRace') }}</span>
+                <el-tag :type="boolTagType(configs.eventRules.isRefuellingAllowedInRace)" effect="light" round>
+                  {{ boolLabel(configs.eventRules.isRefuellingAllowedInRace) }}
+                </el-tag>
+              </div>
+              <div class="rules-bool-row">
+                <span class="rules-bool-label">{{ t('form.isMandatoryPitstopRefuellingRequired') }}</span>
+                <el-tag :type="boolTagType(configs.eventRules.isMandatoryPitstopRefuellingRequired)" effect="light" round>
+                  {{ boolLabel(configs.eventRules.isMandatoryPitstopRefuellingRequired) }}
+                </el-tag>
+              </div>
+              <div class="rules-bool-row">
+                <span class="rules-bool-label">{{ t('form.isMandatoryPitstopTyreChangeRequired') }}</span>
+                <el-tag :type="boolTagType(configs.eventRules.isMandatoryPitstopTyreChangeRequired)" effect="light" round>
+                  {{ boolLabel(configs.eventRules.isMandatoryPitstopTyreChangeRequired) }}
+                </el-tag>
+              </div>
+              <div class="rules-bool-row">
+                <span class="rules-bool-label">{{ t('form.isMandatoryPitstopSwapDriverRequired') }}</span>
+                <el-tag :type="boolTagType(configs.eventRules.isMandatoryPitstopSwapDriverRequired)" effect="light" round>
+                  {{ boolLabel(configs.eventRules.isMandatoryPitstopSwapDriverRequired) }}
+                </el-tag>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="uploadConfirmVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="uploadingConfig" @click="confirmUploadConfig">{{
+          t('deploy.confirmUpload')
+        }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive } from 'vue'
-import { Upload, Connection, Close, Plus, Edit, Delete, VideoPlay, VideoPause, Download, RefreshRight } from '@element-plus/icons-vue'
+import {
+  Upload,
+  Connection,
+  Close,
+  Plus,
+  Edit,
+  Delete,
+  VideoPlay,
+  VideoPause,
+  Download,
+  RefreshRight,
+  Location,
+  Medal,
+  PartlyCloudy,
+  Calendar,
+  Operation
+} from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import type { AllConfigs } from '../types/configuration'
 import type { ServerListItem } from '../types/server'
-import { t } from '../i18n'
+import { t, currentLanguage } from '../i18n'
+import { getTrackOptions } from '../i18n/mappings'
 import {
   getServers,
   saveServer,
@@ -275,6 +470,102 @@ import {
 const props = defineProps<{
   configs: AllConfigs
 }>()
+
+const uploadConfirmVisible = ref(false)
+
+const trackDisplayName = computed(() => {
+  void currentLanguage.value
+  const id = props.configs.event.track
+  return getTrackOptions().find((o) => o.value === id)?.label ?? id
+})
+
+const trackMedalsLabel = computed(() => {
+  void currentLanguage.value
+  const v = props.configs.settings.trackMedalsRequirement
+  return v === 0 ? t('common.none') : String(v)
+})
+
+function cloudLevelText(value: number): string {
+  if (value === 0) return t('weather.clear')
+  if (value < 0.3) return t('weather.lightCloud')
+  if (value < 0.6) return t('weather.mediumCloud')
+  if (value < 0.8) return t('weather.heavyCloud')
+  return t('weather.heavyCloud')
+}
+
+function rainLevelText(value: number): string {
+  if (value === 0) return t('weather.clear')
+  if (value < 0.3) return t('weather.lightRain')
+  if (value < 0.6) return t('weather.mediumRain')
+  if (value < 0.8) return t('weather.heavyRain')
+  return t('weather.thunderstorm')
+}
+
+function weatherRandomnessText(value: number): string {
+  if (value === 0) return t('weatherRandomness.disabled')
+  if (value <= 2) return t('weatherRandomness.realistic')
+  if (value <= 5) return t('weatherRandomness.variable')
+  return t('weatherRandomness.chaotic')
+}
+
+const cloudLevelSummary = computed(() => {
+  void currentLanguage.value
+  const v = props.configs.event.cloudLevel
+  return `${v} (${cloudLevelText(v)})`
+})
+
+const rainSummary = computed(() => {
+  void currentLanguage.value
+  const v = props.configs.event.rain
+  return `${v} (${rainLevelText(v)})`
+})
+
+const weatherRandomnessSummary = computed(() => {
+  void currentLanguage.value
+  const v = props.configs.event.weatherRandomness
+  return `${v} (${weatherRandomnessText(v)})`
+})
+
+function sessionTypeLabel(type: string): string {
+  switch (type) {
+    case 'P':
+      return t('sessionTypes.practice')
+    case 'Q':
+      return t('sessionTypes.qualify')
+    case 'R':
+      return t('sessionTypes.race')
+    default:
+      return type
+  }
+}
+
+function dayOfWeekendLabel(n: number): string {
+  if (n === 1) return t('daysOfWeekend.friday')
+  if (n === 2) return t('daysOfWeekend.saturday')
+  if (n === 3) return t('daysOfWeekend.sunday')
+  return String(n)
+}
+
+function sessionBlockTitle(sessionType: string, index: number): string {
+  return `${sessionTypeLabel(sessionType)} — ${t('form.nthSession').replace('{n}', String(index + 1))}`
+}
+
+function boolLabel(v: boolean): string {
+  return v ? t('common.yes') : t('common.no')
+}
+
+function boolTagType(v: boolean): 'success' | 'info' {
+  return v ? 'success' : 'info'
+}
+
+function openUploadConfigConfirm() {
+  uploadConfirmVisible.value = true
+}
+
+async function confirmUploadConfig() {
+  uploadConfirmVisible.value = false
+  await runUploadConfig()
+}
 
 const sshConfig = ref({
   host: '',
@@ -683,7 +974,7 @@ onMounted(() => {
   loadServerList()
 })
 
-async function handleUploadConfig() {
+async function runUploadConfig() {
   try {
     uploadingConfig.value = true
     configUploadStatus.value = t('deploy.deletingOldConfig')
@@ -1014,5 +1305,331 @@ async function handleDownloadResults() {
   position: absolute;
   top: 100%;
   left: 0;
+}
+
+.upload-confirm-alert {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.upload-confirm-alert :deep(.el-alert) {
+  align-items: flex-start;
+}
+
+.upload-confirm-alert :deep(.el-alert__content) {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.upload-summary-scroll {
+  flex: 1;
+  min-height: 120px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.upload-summary-hero {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    var(--el-color-primary-light-9) 0%,
+    var(--el-fill-color-blank) 48%,
+    var(--el-fill-color-light) 100%
+  );
+  border: 1px solid var(--el-color-primary-light-7);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.hero-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--el-color-primary);
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.hero-track {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--el-text-color-primary);
+  margin-bottom: 14px;
+  word-break: break-word;
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.upload-summary-panel {
+  border-radius: 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-blank);
+  overflow: visible;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.upload-summary-panel .panel-head {
+  border-radius: 10px 10px 0 0;
+}
+
+.upload-summary-panel--rules .rules-numbers {
+  margin-bottom: 4px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.panel-head-icon {
+  font-size: 18px;
+  color: var(--el-color-primary);
+}
+
+.panel-body {
+  padding: 14px 16px 16px;
+}
+
+.kv-grid {
+  display: grid;
+  gap: 12px 16px;
+}
+
+.kv-grid-weather {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.kv-grid-auto {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.kv-wide {
+  grid-column: 1 / -1;
+}
+
+.kv-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.kv-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.kv-value-muted {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+}
+
+.kv-highlight {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.kv-highlight .kv-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--el-color-primary);
+}
+
+.weather-track-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  color: var(--el-color-primary);
+}
+
+.weather-track-line .el-icon {
+  font-size: 18px;
+}
+
+.weather-track-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.session-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.session-card {
+  padding: 12px 14px 12px 16px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-left-width: 4px;
+  border-left-style: solid;
+}
+
+.session-card[data-session-type='P'] {
+  border-left-color: var(--el-color-info);
+}
+
+.session-card[data-session-type='Q'] {
+  border-left-color: var(--el-color-warning);
+}
+
+.session-card[data-session-type='R'] {
+  border-left-color: var(--el-color-danger);
+}
+
+.session-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 8px;
+}
+
+.session-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.session-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  background: var(--el-fill-color-blank);
+  color: var(--el-text-color-regular);
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.rules-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 14px;
+}
+
+.rules-bool-title {
+  margin-top: 16px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rules-bool-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rules-bool-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+}
+
+.rules-bool-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  line-height: 1.45;
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.rules-bool-row :deep(.el-tag) {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+:deep(.upload-config-confirm-dialog .el-dialog__header) {
+  padding-bottom: 8px;
+  margin-right: 0;
+}
+
+:deep(.upload-config-confirm-dialog .el-dialog__title) {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+:deep(.upload-config-confirm-dialog.el-dialog) {
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+:deep(.upload-config-confirm-dialog .el-dialog__body) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-tags :deep(.el-tag) {
+  height: auto;
+  min-height: 24px;
+  white-space: normal;
+  word-break: break-word;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  line-height: 1.35;
+  max-width: 100%;
 }
 </style>

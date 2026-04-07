@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "acc-server-manager"
+name = "acc-pitwall"
 version = "1.0.0"
 dependencies = [
  "base64 0.22.1",

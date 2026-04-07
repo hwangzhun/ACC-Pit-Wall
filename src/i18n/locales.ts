@@ -188,6 +188,7 @@ export const translations = {
       mandatoryPitstopCount: '强制进站次数',
       maxTotalDrivingTime: '最大总驾驶时间',
       maxDriversCount: '最大车手数',
+      tyreSetCount: '可用轮胎套数',
       isRefuellingAllowedInRace: '正赛允许加油',
       isRefuellingTimeFixed: '加油时间固定',
       isMandatoryPitstopRefuellingRequired: '强制进站需加油',
@@ -283,7 +284,7 @@ export const translations = {
     },
     // 页面标题
     title: {
-      main: 'ACC Server Manager',
+      main: 'ACC Pitwall',
       addEntry: '添加车队',
       editEntry: '编辑车队',
       importCsv: '导入CSV',
@@ -480,6 +481,11 @@ export const translations = {
       downloadResultsError: '下载比赛结果错误',
       serverRenamed: '服务器重命名成功',
       confirmDeleteServer: '确定要删除服务器 "{name}" 吗？此操作不可恢复。',
+      uploadConfirmTitle: '确认上传配置文件',
+      uploadConfirmDescription: '请核对以下主要信息，确认后将删除远程旧配置并上传当前配置。',
+      summaryOverview: '主要信息',
+      confirmUpload: '确认上传',
+      summaryRuleSwitches: '规则开关',
     },
     preset: {
       title: '预设管理',
@@ -717,6 +723,7 @@ export const translations = {
       mandatoryPitstopCount: 'Mandatory Pitstops',
       maxTotalDrivingTime: 'Max Total Driving Time',
       maxDriversCount: 'Max Drivers Count',
+      tyreSetCount: 'Available tyre sets',
       isRefuellingAllowedInRace: 'Refuelling Allowed',
       isRefuellingTimeFixed: 'Fixed Refuelling Time',
       isMandatoryPitstopRefuellingRequired: 'Pitstop Requires Refuel',
@@ -812,7 +819,7 @@ export const translations = {
     },
     // Page Titles
     title: {
-      main: 'ACC Server Manager',
+      main: 'ACC Pitwall',
       addEntry: 'Add Team',
       editEntry: 'Edit Team',
       importCsv: 'Import CSV',
@@ -1010,6 +1017,12 @@ export const translations = {
       downloadResultsError: 'Download results error',
       serverRenamed: 'Server renamed successfully',
       confirmDeleteServer: 'Are you sure you want to delete server "{name}"? This action cannot be undone.',
+      uploadConfirmTitle: 'Confirm config upload',
+      uploadConfirmDescription:
+        'Review the summary below. After you confirm, remote old config will be removed and the current configuration will be uploaded.',
+      summaryOverview: 'Overview',
+      confirmUpload: 'Upload',
+      summaryRuleSwitches: 'Rule switches',
     },
     preset: {
       title: 'Preset Manager',

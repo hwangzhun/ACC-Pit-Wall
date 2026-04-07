@@ -5,8 +5,34 @@ import { t as translate } from './locales'
 
 export type Language = 'zh' | 'en'
 
-// 当前语言状态
-export const currentLanguage = ref<Language>('zh')
+const LANGUAGE_STORAGE_KEY = 'acc-server-manager.language'
+
+function canUseLocalStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function readStoredLanguage(): Language {
+  if (!canUseLocalStorage()) return 'zh'
+  try {
+    const raw = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+    if (raw === 'zh' || raw === 'en') return raw
+  } catch {
+    /* ignore */
+  }
+  return 'zh'
+}
+
+function persistLanguage(lang: Language): void {
+  if (!canUseLocalStorage()) return
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
+  } catch {
+    /* ignore */
+  }
+}
+
+// 当前语言状态（启动时从 localStorage 恢复）
+export const currentLanguage = ref<Language>(readStoredLanguage())
 
 // 获取当前语言
 export const getCurrentLanguage = () => currentLanguage.value
@@ -14,11 +40,12 @@ export const getCurrentLanguage = () => currentLanguage.value
 // 设置语言
 export const setLanguage = (lang: Language) => {
   currentLanguage.value = lang
+  persistLanguage(lang)
 }
 
 // 切换语言
 export const toggleLanguage = () => {
-  currentLanguage.value = currentLanguage.value === 'zh' ? 'en' : 'zh'
+  setLanguage(currentLanguage.value === 'zh' ? 'en' : 'zh')
 }
 
 // 获取字段注释

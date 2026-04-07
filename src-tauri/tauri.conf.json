@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ACC Server Manager",
+  "productName": "ACC Pitwall",
   "version": "1.0.0",
-  "identifier": "com.acc.config-generator",
+  "identifier": "com.acc-pitwall",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "ACC Server Manager",
+        "title": "ACC Pitwall",
         "width": 1400,
         "height": 900,
         "devtools": true

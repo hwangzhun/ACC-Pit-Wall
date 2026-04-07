@@ -1,4 +1,4 @@
-# ACC 赛事服务器配置工具 (ACC Server Manager)
+# ACC 赛事服务器配置工具 (ACC Pitwall)
 
 ![Logo](https://cdn.jsdelivr.net/gh/hwangzhun/ACC-Server-Manager@main/src/assets/logo-horizontal-g.svg)
 
@@ -121,6 +121,19 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 ├── public/              # Static assets
 └── id_reference.md      # ID lookup tables & CSV guide
 ```
+
+## 更新日志  / Updatelog
+
+V1.1.1 - 2026/4/6
+- 项目展示名由 ACC Server Manager 更名为 **ACC Pitwall**（本地包名 `acc-pitwall`），因与其他项目重名。本应用仅作本地开发与自构建安装包使用，**不计划**向 npm、crates.io 等公共注册表发布。
+- Renamed the product from **ACC Server Manager** to **ACC Pitwall** (local package name `acc-pitwall`) due to a naming conflict with another project. This app is for local development and self-built installers only; **we do not plan** to publish to npm, crates.io, or similar public registries.
+
+V1.1.0 - 2026/4/4
+- 在上传配置前加入弹窗二确认配置信息 Add a confirmation modal to verify configuration details before uploading.
+
+V1.0.1 - 2026/3/31
+- 修复 BOP 车辆滑块数值不正确 
+- Fixed incorrect slider values ​​for BOP vehicles.
 
 ---
 
