@@ -124,6 +124,13 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 
 ## 更新日志  / Updatelog
 
+V2.0.1 - 2026/4/28
+- 新增 Tauri 一键部署能力，部署更简单。
+- 修复赛事配置页“添加 Session”按钮缺失问题。
+- 修复滑块异常，交互更稳定。
+- 优化 SSH 连接与保活，远程操作更顺畅。
+- 支持从服务器读取赛事配置。
+
 V2.0.0 - 2026/4/21
 - **UI 全面升级**：从 Web 网页重构为 Tauri 桌面应用。
 - **Complete UI overhaul**: Refactoring a Web Application into a Tauri Desktop App

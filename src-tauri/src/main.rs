@@ -39,6 +39,7 @@ pub fn run() {
             download_results_cmd,
             delete_config_folder,
             download_results_filtered_cmd,
+            pull_server_config_cmd,
             get_app_exe_dir,
             get_app_resource_dir,
             get_lfm_bop_cached,

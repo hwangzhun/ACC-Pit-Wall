@@ -52,6 +52,15 @@
             <p class="win11-header-subtitle">{{ currentNavDescription }}</p>
           </div>
           <div class="flex items-center gap-3">
+            <div
+              v-if="isConnected || connecting"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+              :class="connecting ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'"
+              :title="connecting ? 'SSH connecting...' : `SSH: ${connectionStatus?.host}`"
+            >
+              <span class="w-1.5 h-1.5 rounded-full" :class="connecting ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'" />
+              {{ connecting ? 'Connecting' : 'SSH' }}
+            </div>
             <button @click="toggleTheme" class="win11-button secondary">
               <svg v-if="currentTheme === 'dark'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -77,7 +86,7 @@
             <AssistRulesForm v-else-if="activeTab === 'assistRules'" :assistRules="configs.assistRules" />
             <EntryListForm v-else-if="activeTab === 'entryList'" :entryList="configs.entryList" />
             <BopContainer v-else-if="activeTab === 'bop'" v-model:bop="configs.bop" />
-            <DeployForm v-else-if="activeTab === 'deploy'" :configs="configs" />
+            <DeployForm v-else-if="activeTab === 'deploy'" v-model:configs="configs" />
             <JsonPreview v-else-if="activeTab === 'preview'" :configs="configs" />
             <About v-else-if="activeTab === 'about'" />
           </div>
@@ -110,6 +119,7 @@ import DeployForm from './DeployForm.vue'
 import JsonPreview from './JsonPreview.vue'
 import About from './About.vue'
 import PresetManager from '../components/PresetManager.vue'
+import { useDeployConnection } from '../composables/useDeployConnection'
 import type { AllConfigs } from '../types/configuration'
 import {
   defaultConfiguration,
@@ -126,6 +136,7 @@ import logoImg from '../assets/logo.png'
 const appVersion = __APP_VERSION__
 const { currentLanguage, toggleLanguage } = useLanguage()
 const { currentTheme, toggleTheme } = useTheme()
+const { isConnected, connecting, connectionStatus, refreshStatus } = useDeployConnection()
 
 function syncDocumentTitle() {
   const title = `${t('title.main')} v${appVersion}`
@@ -137,7 +148,11 @@ function syncDocumentTitle() {
   }
 }
 
-onMounted(syncDocumentTitle)
+onMounted(async () => {
+  syncDocumentTitle()
+  await refreshStatus()
+})
+
 watch(languageRef, syncDocumentTitle)
 
 const activeTab = ref('settings')

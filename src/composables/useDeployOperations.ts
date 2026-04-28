@@ -36,6 +36,8 @@ export function useDeployOperations() {
   const stoppingServer = ref(false)
   const downloadingResults = ref(false)
   const serverRunning = ref(false)
+  const uploadingServer = ref(false)
+  const syncingConfig = ref(false)
   const serverLogs = ref<LogEntry[]>([])
   const loading = ref(false)
 
@@ -216,6 +218,110 @@ export function useDeployOperations() {
     }
   }
 
+  async function uploadServer(
+    sshConfig: { host: string; port: number; username: string; password?: string },
+    serverPath: string
+  ): Promise<boolean> {
+    uploadingServer.value = true
+    addLog(t('deploy.uploadingServer'), 'info')
+    try {
+      const rustConfig = buildSshConfig(sshConfig)
+
+      // 优先尝试使用程序同目录 acc-server.zip
+      try {
+        const exeDir = await invoke<string>('get_app_exe_dir')
+        const builtinZipPath = `${exeDir}\\acc-server.zip`
+        const result = await invoke<{ success: boolean; message?: string; error?: string }>('upload_acc_server_local_cmd', {
+          sshConfig: rustConfig,
+          serverPath,
+          localZipPath: builtinZipPath,
+        })
+        if (result.success) {
+          addLog(result.message || t('deploy.serverUploadSuccess'), 'success')
+          notify.success(t('deploy.serverUploadSuccess'))
+          return true
+        }
+        addLog(`${t('deploy.builtinUploadFailed')}: ${result.error || t('deploy.uploadServerFailed')}`, 'error')
+        notify.error(`${t('deploy.builtinUploadFailed')}，请手动选择文件`)
+      } catch {
+        addLog(t('deploy.builtinZipNotFound'), 'warning')
+        notify.warning(t('deploy.builtinZipNotFound'))
+      }
+
+      // 回退：让用户手动选择 zip 文件
+      const selectedPath = await open({
+        multiple: false,
+        filters: [{ name: 'ACC Server ZIP', extensions: ['zip'] }],
+        title: t('deploy.selectServerZip'),
+      })
+      if (!selectedPath || Array.isArray(selectedPath)) {
+        addLog('已取消上传：未选择文件', 'warning')
+        return false
+      }
+      const result = await invoke<{ success: boolean; message?: string; error?: string }>('upload_acc_server_local_cmd', {
+        sshConfig: rustConfig,
+        serverPath,
+        localZipPath: selectedPath,
+      })
+      if (result.success) {
+        addLog(result.message || t('deploy.serverUploadSuccess'), 'success')
+        notify.success(t('deploy.serverUploadSuccess'))
+        return true
+      } else {
+        addLog(result.error || t('deploy.uploadServerFailed'), 'error')
+        notify.error(t('deploy.uploadServerFailed'))
+        return false
+      }
+    } catch (err) {
+      addLog(String(err), 'error')
+      notify.error(t('deploy.uploadServerError'))
+      return false
+    } finally {
+      uploadingServer.value = false
+    }
+  }
+
+  async function pullServerConfig(
+    sshConfig: { host: string; port: number; username: string; password?: string },
+    serverPath: string
+  ): Promise<AllConfigs | null> {
+    syncingConfig.value = true
+    addLog(t('deploy.pullingConfig'), 'info')
+    try {
+      const rustConfig = buildSshConfig(sshConfig)
+      const result = await invoke<{
+        success: boolean
+        configs?: Partial<AllConfigs>
+        loaded_files?: string[]
+        missing_files?: string[]
+        error?: string
+      }>('pull_server_config_cmd', {
+        sshConfig: rustConfig,
+        serverPath,
+      })
+      if (result.success && result.configs) {
+        const loadedCount = result.loaded_files?.length ?? 0
+        const missingCount = result.missing_files?.length ?? 0
+        addLog(`${t('deploy.pullConfigSuccess')}（已读取 ${loadedCount} 个文件）`, 'success')
+        if (missingCount > 0) {
+          addLog(`cfg 目录缺少 ${missingCount} 个可选文件：${result.missing_files?.join(', ')}`, 'warning')
+        }
+        notify.success(t('deploy.pullConfigSuccess'))
+        return result.configs as AllConfigs
+      } else {
+        addLog(result.error || t('deploy.pullConfigFailedMsg'), 'error')
+        notify.error(t('deploy.pullConfigFailedMsg'))
+        return null
+      }
+    } catch (err) {
+      addLog(String(err), 'error')
+      notify.error(t('deploy.pullConfigFailedMsg'))
+      return null
+    } finally {
+      syncingConfig.value = false
+    }
+  }
+
   return {
     uploadingConfig,
     configUploadStatus,
@@ -223,6 +329,8 @@ export function useDeployOperations() {
     stoppingServer,
     downloadingResults,
     serverRunning,
+    uploadingServer,
+    syncingConfig,
     serverLogs,
     loading,
     addLog,
@@ -232,5 +340,7 @@ export function useDeployOperations() {
     stopServer,
     checkServerStatus,
     downloadResults,
+    uploadServer,
+    pullServerConfig,
   }
 }

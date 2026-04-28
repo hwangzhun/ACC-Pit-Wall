@@ -1025,6 +1025,88 @@ fn download_filtered_json_files(
     Ok(downloaded_files)
 }
 
+/// 从远程服务器 cfg 目录读取并解析所有配置文件
+pub fn download_server_cfg_configs(
+    config: &SshConfig,
+    server_path: &str,
+) -> Result<Value, String> {
+    with_session(config, |session| {
+        let server_path = normalize_windows_path(server_path);
+        let cfg_path = format!("{}\\cfg", server_path);
+
+        // 检查 cfg 目录是否存在
+        let check_cmd = format!(
+            r#"if (Test-Path "{}") {{ Write-Host "EXISTS" }} else {{ Write-Host "NOT_EXISTS" }}"#,
+            cfg_path
+        );
+
+        let mut check_channel = session.channel_session()
+            .map_err(|e| format!("创建检查通道失败: {}", e))?;
+        check_channel.exec(format!("powershell.exe -Command {}", check_cmd).as_str())
+            .map_err(|e| format!("执行检查命令失败: {}", e))?;
+        let mut check_output = Vec::new();
+        check_channel.read_to_end(&mut check_output).ok();
+        check_channel.wait_close().ok();
+        let check_output_str = String::from_utf8_lossy(&check_output);
+        if !check_output_str.trim().contains("EXISTS") {
+            return Err("服务器 cfg 目录不存在".to_string());
+        }
+
+        let sftp = session.sftp()
+            .map_err(|e| format!("创建 SFTP 会话失败: {}", e))?;
+
+        // 文件名 -> AllConfigs 键名映射
+        let file_keys = vec![
+            ("configuration.json", "configuration"),
+            ("settings.json", "settings"),
+            ("event.json", "event"),
+            ("eventRules.json", "eventRules"),
+            ("assistRules.json", "assistRules"),
+            ("entrylist.json", "entryList"),
+            ("bop.json", "bop"),
+        ];
+
+        let mut configs_map = serde_json::Map::new();
+        let mut loaded_files: Vec<String> = Vec::new();
+        let mut missing_files: Vec<String> = Vec::new();
+        for (filename, key) in &file_keys {
+            let remote_file_path = format!("{}/{}", cfg_path.replace('\\', "/"), filename);
+
+            let mut remote_file = match sftp.open(Path::new(&remote_file_path)) {
+                Ok(f) => f,
+                Err(_) => {
+                    missing_files.push((*filename).to_string());
+                    continue;
+                }
+            };
+
+            let mut content = Vec::new();
+            remote_file.read_to_end(&mut content)
+                .map_err(|e| format!("读取 {} 内容失败: {}", filename, e))?;
+
+            let json_str = String::from_utf8_lossy(&content);
+            let json_value: serde_json::Value = serde_json::from_str(&json_str)
+                .map_err(|e| format!("解析 {} JSON 失败: {}", filename, e))?;
+
+            configs_map.insert(key.to_string(), json_value);
+            loaded_files.push((*filename).to_string());
+        }
+
+        if configs_map.is_empty() {
+            return Err("未在服务器 cfg 目录读取到可用的 JSON 配置文件".to_string());
+        }
+
+        let result = serde_json::json!({
+            "success": true,
+            "configs": Value::Object(configs_map),
+            "loaded_files": loaded_files,
+            "missing_files": missing_files
+        });
+
+        Ok(result)
+    })
+}
+
 /// 递归下载目录
 fn download_directory_recursive(
     sftp: &ssh2::Sftp,

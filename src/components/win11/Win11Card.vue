@@ -1,6 +1,10 @@
 <template>
   <div class="win11-card">
-    <h3 v-if="title" class="win11-card-title">{{ title }}</h3>
+    <div class="win11-card-header">
+      <slot name="title">
+        <h3 v-if="title" class="win11-card-title">{{ title }}</h3>
+      </slot>
+    </div>
     <slot />
   </div>
 </template>

@@ -190,6 +190,10 @@
     box-shadow: var(--win11-card-shadow);
   }
 
+  .win11-card-header {
+    @apply mb-4;
+  }
+
   .win11-error {
     @apply text-xs mt-1;
     color: rgb(var(--win11-error-text-rgb));

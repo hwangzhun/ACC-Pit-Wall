@@ -1,4 +1,4 @@
-use crate::ssh_utils::{SshConfig, DeployOptions, test_ssh_connection, deploy_configs, ServerProfile, connect_ssh, disconnect_ssh, get_ssh_status, ConnectResult, delete_config_folder as delete_cfg_folder, download_results_filtered};
+use crate::ssh_utils::{SshConfig, DeployOptions, test_ssh_connection, deploy_configs, ServerProfile, connect_ssh, disconnect_ssh, get_ssh_status, ConnectResult, delete_config_folder as delete_cfg_folder, download_results_filtered, download_server_cfg_configs};
 use crate::preset_manager::{get_presets, save_preset, load_preset, update_preset, delete_preset, rename_preset};
 use crate::server_manager::{get_servers, save_server, load_server, delete_server, rename_server};
 use serde_json::Value;
@@ -272,6 +272,21 @@ pub async fn download_results_filtered_cmd(
 ) -> Result<Value, String> {
     let result = download_results_filtered(&ssh_config, &server_path, &local_path)?;
     Ok(result)
+}
+
+/// 从服务器读取 cfg 配置
+#[tauri::command]
+pub async fn pull_server_config_cmd(
+    ssh_config: SshConfig,
+    server_path: String,
+) -> Result<Value, String> {
+    match download_server_cfg_configs(&ssh_config, &server_path) {
+        Ok(result) => Ok(result),
+        Err(error) => Ok(serde_json::json!({
+            "success": false,
+            "error": error
+        })),
+    }
 }
 
 // ============================================================================

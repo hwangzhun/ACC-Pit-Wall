@@ -22,7 +22,7 @@
   "bundle": {
     "active": true,
     "resources": [
-      "../acc-server.zip"
+      "resources/acc-server.zip"
     ],
     "icon": [
       "icons/32x32.png",

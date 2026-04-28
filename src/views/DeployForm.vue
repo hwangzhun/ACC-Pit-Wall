@@ -43,10 +43,14 @@
           :stopping-server="stoppingServer"
           :downloading-results="downloadingResults"
           :server-running="serverRunning"
+          :uploading-server="uploadingServer"
+          :syncing-config="syncingConfig"
           @upload="handleUploadConfig"
+          @upload-server="handleUploadServer"
           @start="handleStartServer"
           @stop="handleStopServer"
           @download="handleDownloadResults"
+          @pull="handlePullConfig"
         />
 
         <Win11Divider />
@@ -97,6 +101,10 @@ const props = defineProps<{
   configs: AllConfigs
 }>()
 
+const emit = defineEmits<{
+  'update:configs': [configs: AllConfigs]
+}>()
+
 const {
   isConnected,
   connecting,
@@ -105,6 +113,7 @@ const {
   connect,
   disconnect,
   testConnection,
+  refreshStatus,
 } = useDeployConnection((msg, type) => addLog(msg, type))
 
 const {
@@ -125,6 +134,8 @@ const {
   stoppingServer,
   downloadingResults,
   serverRunning,
+  uploadingServer,
+  syncingConfig,
   serverLogs,
   clearLogs,
   addLog,
@@ -133,6 +144,8 @@ const {
   stopServer,
   checkServerStatus,
   downloadResults,
+  uploadServer,
+  pullServerConfig,
 } = useDeployOperations()
 
 const sshConfig = reactive<SshFormConfig>({
@@ -151,6 +164,7 @@ const uploadConfirmVisible = ref(false)
 
 onMounted(async () => {
   await loadServerList()
+  await refreshStatus()
 })
 
 async function handleServerSelect(name: string) {
@@ -284,6 +298,32 @@ async function handleDownloadResults() {
     { host: sshConfig.host, port: sshConfig.port, username: sshConfig.username, password: sshConfig.password },
     serverPath
   )
+}
+
+async function handleUploadServer() {
+  const serverPath = sshConfig.serverPath || 'C:\\ACC_Server'
+  await uploadServer(
+    { host: sshConfig.host, port: sshConfig.port, username: sshConfig.username, password: sshConfig.password },
+    serverPath
+  )
+}
+
+async function handlePullConfig() {
+  const serverPath = sshConfig.serverPath || ''
+  if (!serverPath) {
+    addLog(t('deploy.pullConfigNoServerPath'), 'warning')
+    return
+  }
+  const pulled = await pullServerConfig(
+    { host: sshConfig.host, port: sshConfig.port, username: sshConfig.username, password: sshConfig.password },
+    serverPath
+  )
+  if (pulled) {
+    emit('update:configs', {
+      ...props.configs,
+      ...pulled,
+    })
+  }
 }
 </script>
 

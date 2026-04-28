@@ -244,11 +244,7 @@ export function defaultEvent(): Event {
     preRaceWaitingTimeSeconds: 80,
     rain: 0.0,
     sessionOverTimeSeconds: 120,
-    sessions: [
-      { dayOfWeekend: 2, hourOfDay: 14, sessionDurationMinutes: 60, sessionType: 'P', timeMultiplier: 1 },
-      { dayOfWeekend: 2, hourOfDay: 15, sessionDurationMinutes: 15, sessionType: 'Q', timeMultiplier: 1 },
-      { dayOfWeekend: 2, hourOfDay: 16, sessionDurationMinutes: 60, sessionType: 'R', timeMultiplier: 1 }
-    ],
+    sessions: [],
     simracerWeatherConditions: 0,
     track: 'monza',
     weatherRandomness: 1

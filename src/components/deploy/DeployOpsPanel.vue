@@ -13,6 +13,24 @@
 
       <Win11Button
         variant="secondary"
+        :loading="syncingConfig"
+        :disabled="!isConnected || syncingConfig || uploadingConfig || startingServer || stoppingServer"
+        @click="handlePullConfig"
+      >
+        {{ syncingConfig ? t('deploy.pullingConfig') : t('deploy.pullConfig') }}
+      </Win11Button>
+
+      <Win11Button
+        variant="secondary"
+        :loading="uploadingServer"
+        :disabled="!isConnected || uploadingServer || uploadingConfig || startingServer || stoppingServer"
+        @click="handleUploadServer"
+      >
+        {{ uploadingServer ? t('deploy.uploadingServer') : t('deploy.uploadServer') }}
+      </Win11Button>
+
+      <Win11Button
+        variant="secondary"
         :loading="startingServer"
         :disabled="!isConnected || serverRunning"
         @click="handleStartServer"
@@ -53,17 +71,25 @@ defineProps<{
   stoppingServer: boolean
   downloadingResults: boolean
   serverRunning: boolean
+  uploadingServer: boolean
+  syncingConfig: boolean
 }>()
 
 const emit = defineEmits<{
   'upload': []
+  'upload-server': []
   'start': []
   'stop': []
   'download': []
+  'pull': []
 }>()
 
 function handleUploadConfig() {
   emit('upload')
+}
+
+function handleUploadServer() {
+  emit('upload-server')
 }
 
 function handleStartServer() {
@@ -76,6 +102,10 @@ function handleStopServer() {
 
 function handleDownloadResults() {
   emit('download')
+}
+
+function handlePullConfig() {
+  emit('pull')
 }
 </script>
 

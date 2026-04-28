@@ -107,8 +107,9 @@ function updateValue(event: MouseEvent) {
     value = Math.round(value / props.step) * props.step
   }
   
+value = Number(value.toFixed(10))
   value = Math.max(props.min ?? 0, Math.min(props.max ?? 100, value))
-  
+
   emit('update:modelValue', value)
 }
 </script>
@@ -135,19 +136,24 @@ function updateValue(event: MouseEvent) {
 }
 
 .win11-slider-track {
-  @apply absolute w-full h-1 rounded-full bg-win11-control-bg;
+  @apply absolute w-full h-1 rounded-full;
+  background: var(--win11-control-bg);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .win11-slider-fill {
   @apply absolute h-1 rounded-full;
   @apply transition-all duration-100;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
 }
 
 .win11-slider-thumb {
-  @apply absolute w-4 h-4 rounded-full bg-white;
-  @apply shadow-sm cursor-pointer;
+  @apply absolute w-4 h-4 rounded-full cursor-pointer;
   @apply transition-all duration-100;
   @apply hover:scale-110;
+  @apply border-2 border-white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
 }
 
 .win11-slider-thumb::after {

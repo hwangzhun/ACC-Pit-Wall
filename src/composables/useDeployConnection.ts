@@ -21,11 +21,13 @@ function buildSshConfig(host: string, port: number, username: string, password: 
 
 export type LogCallback = (message: string, type: 'info' | 'success' | 'error' | 'warning') => void
 
+// Module-level singleton state — shared across all useDeployConnection callers
+const globalIsConnected = ref(false)
+const globalConnecting = ref(false)
+const globalConnectionStatus = ref<ConnectionStatus>({ connected: false })
+const globalValidationErrors = ref<Record<string, string>>({})
+
 export function useDeployConnection(onLog?: LogCallback) {
-  const isConnected = ref(false)
-  const connecting = ref(false)
-  const connectionStatus = ref<ConnectionStatus>({ connected: false })
-  const validationErrors = ref<Record<string, string>>({})
 
   function validateForm(host: string, port: number, username: string): boolean {
     const errors: Record<string, string> = {}
@@ -38,7 +40,7 @@ export function useDeployConnection(onLog?: LogCallback) {
     if (!username.trim()) {
       errors.username = t('deploy.pleaseInputUsername')
     }
-    validationErrors.value = errors
+    globalValidationErrors.value = errors
     return Object.keys(errors).length === 0
   }
 
@@ -77,14 +79,14 @@ export function useDeployConnection(onLog?: LogCallback) {
     if (!validateForm(config.host, config.port, config.username)) {
       return false
     }
-    connecting.value = true
+    globalConnecting.value = true
     onLog?.(t('deploy.connecting'), 'info')
     try {
       const sshConfig = buildSshConfig(config.host, config.port, config.username, config.password)
       const result = await invoke<{ success: boolean; error?: string }>('connect', { config: sshConfig })
       if (result.success) {
-        isConnected.value = true
-        connectionStatus.value = { connected: true, host: config.host, username: config.username }
+        globalIsConnected.value = true
+        globalConnectionStatus.value = { connected: true, host: config.host, username: config.username }
         notify.success(t('deploy.sshConnected'))
         onLog?.(t('deploy.sshConnected'), 'success')
         return true
@@ -98,7 +100,7 @@ export function useDeployConnection(onLog?: LogCallback) {
       onLog?.(String(err), 'error')
       return false
     } finally {
-      connecting.value = false
+      globalConnecting.value = false
     }
   }
 
@@ -106,8 +108,8 @@ export function useDeployConnection(onLog?: LogCallback) {
     onLog?.(t('deploy.disconnecting'), 'info')
     try {
       await invoke('disconnect')
-      isConnected.value = false
-      connectionStatus.value = { connected: false }
+      globalIsConnected.value = false
+      globalConnectionStatus.value = { connected: false }
       notify.info(t('deploy.sshDisconnected'))
       onLog?.(t('deploy.sshDisconnected'), 'info')
     } catch (err) {
@@ -119,22 +121,22 @@ export function useDeployConnection(onLog?: LogCallback) {
   async function refreshStatus(): Promise<void> {
     try {
       const status = await invoke<ConnectionStatus>('get_connection_status')
-      isConnected.value = status.connected
-      connectionStatus.value = status
+      globalIsConnected.value = status.connected
+      globalConnectionStatus.value = status
     } catch {
       // ignore
     }
   }
 
   const isFormValid = computed(() => {
-    return connectionStatus.value.host && connectionStatus.value.username
+    return globalConnectionStatus.value.host && globalConnectionStatus.value.username
   })
 
   return {
-    isConnected,
-    connecting,
-    connectionStatus,
-    validationErrors,
+    isConnected: globalIsConnected,
+    connecting: globalConnecting,
+    connectionStatus: globalConnectionStatus,
+    validationErrors: globalValidationErrors,
     validateForm,
     connect,
     disconnect,
