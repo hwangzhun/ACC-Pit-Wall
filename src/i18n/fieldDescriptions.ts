@@ -21,8 +21,8 @@ export const fieldDescriptions: ConfigFieldDescriptions = {
       en: 'Display name of the server, shown in the server list'
     },
     adminPassword: {
-      zh: '管理员密码，用于访问服务器管理功能',
-      en: 'Administrator password for accessing server management features'
+      zh: '管理员密码，用于访问服务器管理功能；留空表示不设置',
+      en: 'Administrator password for server management; leave empty to disable'
     },
     password: {
       zh: '服务器连接密码，留空为公开服务器',

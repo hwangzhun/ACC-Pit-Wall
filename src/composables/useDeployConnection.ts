@@ -6,6 +6,7 @@ import notify from '../components/win11/notify'
 export interface ConnectionStatus {
   connected: boolean
   host?: string
+  port?: number
   username?: string
 }
 
@@ -86,7 +87,7 @@ export function useDeployConnection(onLog?: LogCallback) {
       const result = await invoke<{ success: boolean; error?: string }>('connect', { config: sshConfig })
       if (result.success) {
         globalIsConnected.value = true
-        globalConnectionStatus.value = { connected: true, host: config.host, username: config.username }
+        globalConnectionStatus.value = { connected: true, host: config.host, port: config.port, username: config.username }
         notify.success(t('deploy.sshConnected'))
         onLog?.(t('deploy.sshConnected'), 'success')
         return true

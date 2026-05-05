@@ -16,7 +16,7 @@
 | **teamName** | 队伍名称 | 是 | **核心字段**：名称相同的车手会被自动编入同一辆赛车 |
 | **raceNumber** | 赛车编号 | 否 | 1-999。若不填则由服务器分配 |
 | **defaultGridPosition** | 初始发车顺位 | 否 | 整数。若不填则按服务器默认规则 |
-| **firstName** | 名字 (First Name) | 是 | 字符串 |
+| **firstName** | 名字 (First Name) | 否 | 字符串 |
 | **lastName** | 姓氏 (Last Name) | 是 | 字符串 |
 | **shortName** | 简称 (3位) | 否 | 3 位大写字母 (如 `ZHA`) |
 | **overrideDriverInfo** | 是否覆盖玩家信息 | 是 | `1`: 覆盖 (使用此处填写的姓名/国家); `0`: 不覆盖 |
@@ -50,7 +50,7 @@ Please ensure your CSV includes the following headers and adheres to the field r
 | **teamName** | Team Name | Yes | **Core Field**: Drivers with the same team name will be grouped into the same car. |
 | **raceNumber** | Race Number | No | 1-999. Assigned by server if empty. |
 | **defaultGridPosition** | Initial Grid Position | No | Integer. Follows server defaults if empty. |
-| **firstName** | First Name | Yes | String |
+| **firstName** | First Name | No | String (can be empty) |
 | **lastName** | Last Name | Yes | String |
 | **shortName** | Short Name (3 chars) | No | 3 uppercase letters (e.g., `DOE`) |
 | **overrideDriverInfo** | Override Info | Yes | `1`: Yes (use CSV info); `0`: No (use Steam profile) |

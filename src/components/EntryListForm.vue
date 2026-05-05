@@ -16,40 +16,76 @@
       </template>
 
       <div class="space-y-6">
-        <div class="win11-toolbar">
-          <div class="win11-toolbar-left">
-            <Win11Input
-              v-model="searchKeyword"
-              :placeholder="t('placeholder.searchEntry')"
-            />
-            <Win11Select
-              v-model="sortBy"
-              :options="sortOptions"
-              :placeholder="t('common.sortBy')"
-            />
-            <Win11Button variant="secondary" @click="toggleSortOrder">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-              </svg>
-            </Win11Button>
-          </div>
+        <!-- 视图切换 + 工具栏 -->
+    <div class="win11-toolbar">
+      <div class="win11-toolbar-left">
+        <Win11Input
+          v-model="searchKeyword"
+          :placeholder="t('placeholder.searchEntry')"
+        />
+        <Win11Select
+          v-model="sortBy"
+          :options="sortOptions"
+          :placeholder="t('common.sortBy')"
+        />
+        <Win11Button variant="secondary" @click="toggleSortOrder">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        </Win11Button>
+        <Win11Button
+          v-if="hasHealthIssues"
+          variant="warning"
+          size="small"
+          @click="showHealthIssuesOnly = !showHealthIssuesOnly"
+          :class="{ 'is-active': showHealthIssuesOnly }"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          {{ t('common.healthIssues') }} ({{ healthIssueCount }})
+        </Win11Button>
+      </div>
 
-          <div class="win11-toolbar-right">
-            <Win11Button
-              v-if="selectedEntries.length > 0"
-              variant="danger"
-              @click="handleBatchDelete"
-            >
-              {{ t('common.deleteCount').replace('{count}', selectedEntries.length.toString()) }}
-            </Win11Button>
-            <Win11Button variant="secondary" @click="showImportMenu = !showImportMenu">
-              {{ t('common.importExport') }}
-            </Win11Button>
-            <Win11Button variant="primary" @click="dialogVisible = true">
-              {{ t('common.addTeam') }}
-            </Win11Button>
-          </div>
+      <div class="win11-toolbar-right">
+        <!-- 视图切换 -->
+        <div class="win11-view-toggle">
+          <button
+            class="view-toggle-btn"
+            :class="{ active: viewMode === 'card' }"
+            @click="viewMode = 'card'"
+            :title="t('common.viewCard')"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <button
+            class="view-toggle-btn"
+            :class="{ active: viewMode === 'table' }"
+            @click="viewMode = 'table'"
+            :title="t('common.viewTable')"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+          </button>
         </div>
+        <Win11Button
+          v-if="selectedEntries.length > 0"
+          variant="danger"
+          @click="handleBatchDelete"
+        >
+          {{ t('common.deleteCount').replace('{count}', selectedEntries.length.toString()) }}
+        </Win11Button>
+        <Win11Button variant="secondary" @click="showImportMenu = !showImportMenu">
+          {{ t('common.importExport') }}
+        </Win11Button>
+        <Win11Button variant="primary" @click="dialogVisible = true">
+          {{ t('common.addTeam') }}
+        </Win11Button>
+      </div>
+    </div>
 
         <div class="win11-toggle-row">
           <div class="win11-toggle-info">
@@ -74,7 +110,8 @@
           </div>
         </div>
 
-        <div v-if="filteredEntries.length > 0" class="entries-grid">
+        <!-- 卡片视图 -->
+        <div v-if="filteredEntries.length > 0 && viewMode === 'card'" class="entries-grid">
           <div
             v-for="(entry, index) in filteredEntries"
             :key="`${entry.teamName}-${entry.raceNumber}-${entry.defaultGridPosition}`"
@@ -123,41 +160,74 @@
             </div>
 
             <div class="drivers-list">
-              <div
-                v-for="(driver, driverIndex) in entry.drivers"
-                :key="driverIndex"
-                class="win11-driver-item"
-                @click="editDriver(entry, driver, driverIndex)"
+              <button
+                class="win11-driver-expand-btn"
+                @click.stop="toggleDriversExpanded(entry)"
               >
-                <span :class="['category-pill', `cat-${driver.driverCategory}`]">
-                  {{ getCategoryName(driver.driverCategory) }}
+                <span class="driver-count-badge">{{ entry.drivers.length }}</span>
+                <span class="driver-count-label">{{ t('common.drivers') }}</span>
+                <svg
+                  class="expand-icon"
+                  :class="{ expanded: isDriversExpanded(entry) }"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+                <span v-if="entryHealthIssues(entry).length > 0" class="health-badge" :title="t('common.healthIssues')">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                 </span>
-                <span class="driver-name">{{ driver.firstName }} {{ driver.lastName }}</span>
-                <span class="driver-id">{{ driver.playerID }}</span>
+              </button>
+
+              <div v-if="isDriversExpanded(entry)" class="drivers-list-detail">
+                <div
+                  v-for="(driver, driverIndex) in entry.drivers"
+                  :key="driverIndex"
+                  class="win11-driver-item"
+                  :class="{ 'has-issue': !isDriverHealthy(entry, driverIndex) }"
+                  @click="editDriver(entry, driver, driverIndex)"
+                >
+                  <span :class="['category-pill', `cat-${driver.driverCategory}`]">
+                    {{ getCategoryName(driver.driverCategory) }}
+                  </span>
+                  <span class="driver-name">{{ driver.firstName }} {{ driver.lastName }}</span>
+                  <span class="driver-id">{{ driver.playerID }}</span>
+                  <button
+                    class="win11-icon-btn danger"
+                    @click.stop="removeDriverFromEntry(entry, driverIndex)"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
                 <button
-                  class="win11-icon-btn danger"
-                  @click.stop="removeDriverFromEntry(entry, driverIndex)"
+                  v-if="entry.drivers.length < 5"
+                  class="win11-add-driver-btn"
+                  @click="addDriverToEntry(entry)"
                 >
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                   </svg>
+                  {{ t('common.addDriver') }}
                 </button>
               </div>
-              <button
-                v-if="entry.drivers.length < 5"
-                class="win11-add-driver-btn"
-                @click="addDriverToEntry(entry)"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                {{ t('common.addDriver') }}
-              </button>
             </div>
           </div>
         </div>
 
-        <div v-else class="win11-empty-state">
+        <!-- 表格视图 -->
+        <EntryListTableView
+          v-if="filteredEntries.length > 0 && viewMode === 'table'"
+          :entries="filteredEntries"
+          v-model:selected="selectedEntries"
+          @edit="(entry) => handleCommand('edit', entry, 0)"
+          @delete="(entry) => handleCommand('delete', entry, 0)"
+          @batch-delete="handleBatchDelete"
+        />
+
+        <div v-if="filteredEntries.length === 0" class="win11-empty-state">
           <svg class="w-16 h-16 text-win11-text-secondary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
@@ -173,53 +243,87 @@
     <Win11Dialog
       v-model="showCsvUpload"
       :title="t('common.importCsv')"
-      width="600px"
+      width="580px"
     >
-      <div class="mb-4 p-4 rounded-lg bg-win11-control-bg border border-win11-border">
-        <p class="text-sm text-win11-text-secondary">{{ t('common.importCsvFormat') }}</p>
-      </div>
-      <input
-        type="file"
-        accept=".csv,.txt"
-        @change="handleCsvFileChange"
-        class="win11-file-input"
+      <Win11Alert
+        :title="t('common.importCsvFormat')"
+        :description="t('common.mergeWithExisting')"
+        type="info"
+        show-icon
+        :closable="false"
+        class="csv-info-alert"
       />
-      <div class="mt-4">
-        <label class="flex items-center gap-2">
-          <input type="checkbox" v-model="mergeWithExisting" class="win11-checkbox" />
-          <span class="text-sm text-win11-text">{{ t('common.mergeWithExisting') }}</span>
-        </label>
+      <div class="entry-io-dropzone">
+        <input
+          type="file"
+          accept=".csv,.txt"
+          @change="handleCsvFileChange"
+          class="win11-file-input"
+        />
       </div>
     </Win11Dialog>
 
     <Win11Dialog
       v-model="showImportMenu"
       :title="t('common.importExport')"
-      width="500px"
+      width="560px"
     >
-      <div class="space-y-4">
-        <div class="win11-form-field">
-          <label class="win11-form-label">{{ t('common.importJson') }}</label>
-          <input
-            type="file"
-            accept=".json"
-            @change="handleJsonFileChange"
-            class="win11-file-input"
-          />
-        </div>
-        <div class="win11-form-field">
-          <label class="win11-form-label">{{ t('common.exportJson') }}</label>
-          <Win11Button variant="secondary" @click="handleExportJson">
-            {{ t('common.exportJson') }}
-          </Win11Button>
-        </div>
-        <div class="win11-form-field">
-          <label class="win11-form-label">{{ t('common.exportCsv') }}</label>
-          <Win11Button variant="secondary" @click="handleExportCsv">
-            {{ t('common.exportCsv') }}
-          </Win11Button>
+      <div class="entry-io-section">
+        <p class="entry-io-section-title">{{ t('common.importFromFile') }}</p>
+        <div class="entry-io-row">
+          <div class="entry-io-item">
+            <div class="entry-io-item-header">
+              <label class="win11-form-label">{{ t('common.importCsv') }}</label>
+              <Win11Tag size="small">{{ t('common.recommended') }}</Win11Tag>
+            </div>
+            <div class="entry-io-dropzone">
+              <input
+                type="file"
+                accept=".csv,.txt"
+                @change="handleCsvFileChange"
+                class="win11-file-input"
+              />
+            </div>
+          </div>
+          <div class="entry-io-item">
+            <label class="win11-form-label">{{ t('common.importJson') }}</label>
+            <div class="entry-io-dropzone">
+              <input
+                type="file"
+                accept=".json"
+                @change="handleJsonFileChange"
+                class="win11-file-input"
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      <Win11Divider />
+
+      <div class="entry-io-section">
+        <p class="entry-io-section-title">{{ t('common.exportToFile') }}</p>
+        <div class="entry-io-export-row">
+          <div class="entry-io-export-item">
+            <Win11Button variant="secondary" @click="handleExportJson" block>
+              {{ t('common.exportJson') }}
+            </Win11Button>
+            <span class="entry-io-export-hint">JSON</span>
+          </div>
+          <div class="entry-io-export-item">
+            <Win11Button variant="secondary" @click="handleExportCsv" block>
+              {{ t('common.exportCsv') }}
+            </Win11Button>
+            <span class="entry-io-export-hint">CSV</span>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <Win11Button variant="secondary" @click="showImportMenu = false">
+          {{ t('common.close') }}
+        </Win11Button>
+      </template>
     </Win11Dialog>
 
     <EntryDialog
@@ -234,9 +338,12 @@
 import { ref, computed } from 'vue'
 import type { EntryList, Entry, Driver } from '../types/configuration'
 import { t } from '../i18n'
-import { Win11Card, Win11Input, Win11Select, Win11Toggle, Win11Button, Win11Dialog } from './win11'
+import { isValidSteamId } from '../utils/steamId'
+import { Win11Card, Win11Input, Win11Select, Win11Toggle, Win11Button, Win11Dialog, Win11Alert, Win11Divider, Win11Tag, notify } from './win11'
 import { parseCSV } from '../utils/csvParser'
+import { getCarLocalizedName } from '../i18n/mappings'
 import EntryDialog from './EntryDialog.vue'
+import EntryListTableView from './entrylist/EntryListTableView.vue'
 
 const props = defineProps<{
   entryList: EntryList
@@ -259,6 +366,9 @@ const editingDriverEntry = ref<Entry | null>(null)
 const editingDriverIndex = ref<number>(0)
 const editingTeamName = ref<Entry | null>(null)
 const selectedEntries = ref<Entry[]>([])
+const viewMode = ref<'card' | 'table'>('card')
+const showHealthIssuesOnly = ref(false)
+const expandedEntries = ref<Set<Entry>>(new Set())
 
 const sortOptions = [
   { value: 'teamName', label: t('common.teamNameLabel') },
@@ -276,18 +386,22 @@ const forceEntryListModel = computed({
 
 const filteredEntries = computed(() => {
   let entries = [...props.entryList.entries]
-  
+
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
-    entries = entries.filter(e => 
+    entries = entries.filter(e =>
       e.teamName.toLowerCase().includes(keyword) ||
       e.raceNumber.toString().includes(keyword) ||
-      e.drivers.some(d => 
+      e.drivers.some(d =>
         d.firstName.toLowerCase().includes(keyword) ||
         d.lastName.toLowerCase().includes(keyword) ||
         d.playerID.toLowerCase().includes(keyword)
       )
     )
+  }
+
+  if (showHealthIssuesOnly.value) {
+    entries = entries.filter(e => entryHealthIssues(e).length > 0)
   }
 
   entries.sort((a, b) => {
@@ -317,6 +431,41 @@ function isSelected(entry: Entry): boolean {
   return selectedEntries.value.includes(entry)
 }
 
+// ---- 健康检查 ----
+function entryHealthIssues(entry: Entry): string[] {
+  const issues: string[] = []
+  if (!entry.teamName?.trim()) issues.push('teamName-empty')
+  if (entry.raceNumber <= 0) issues.push('raceNumber-zero')
+  if (entry.drivers.length === 0) issues.push('no-drivers')
+  entry.drivers.forEach((d, i) => {
+    if (!d.lastName?.trim()) issues.push(`driver-${i}-empty-name`)
+    if (d.playerID && !isValidSteamId(d.playerID)) issues.push(`driver-${i}-invalid-steamid`)
+  })
+  return issues
+}
+
+const healthIssueCount = computed(() => {
+  return filteredEntries.value.reduce((sum, e) => sum + entryHealthIssues(e).length, 0)
+})
+
+const hasHealthIssues = computed(() => healthIssueCount.value > 0)
+
+function isDriversExpanded(entry: Entry): boolean {
+  return expandedEntries.value.has(entry)
+}
+
+function toggleDriversExpanded(entry: Entry) {
+  if (expandedEntries.value.has(entry)) {
+    expandedEntries.value.delete(entry)
+  } else {
+    expandedEntries.value.add(entry)
+  }
+}
+
+function isDriverHealthy(entry: Entry, index: number): boolean {
+  return !entryHealthIssues(entry).some(i => i.startsWith(`driver-${index}`))
+}
+
 function toggleSelection(entry: Entry, selected: boolean) {
   if (selected) {
     if (!selectedEntries.value.includes(entry)) {
@@ -340,10 +489,6 @@ function handleBatchDelete() {
 
 function startEditingTeamName(entry: Entry) {
   editingTeamName.value = entry
-}
-
-function getCarLocalizedName(carModel: number): string {
-  return t('common.carModel') + ' ' + carModel
 }
 
 function getCategoryName(category: number): string {
@@ -511,16 +656,15 @@ function handleExportCsv() {
 
 function parseAndImportCsv(content: string) {
   const result = parseCSV(content)
-  
+
   if (result.errors.length > 0) {
     console.error('CSV导入错误:', result.errors)
-    alert('CSV导入失败: ' + result.errors.join('\n'))
+    notify.error(t('common.importFailed') + ': ' + result.errors.join('; '))
     return
   }
 
-  if (result.warnings.length > 0) {
-    console.warn('CSV导入警告:', result.warnings)
-  }
+  const importedCount = result.entryList.entries.length
+  const warningsCount = result.warnings.length
 
   if (mergeWithExisting.value) {
     props.entryList.entries.push(...result.entryList.entries)
@@ -530,17 +674,36 @@ function parseAndImportCsv(content: string) {
 
   emit('update:entryList', props.entryList)
   showCsvUpload.value = false
+  showImportMenu.value = false
+
+  // 重置过滤/搜索状态，确保导入后显示全部
+  showHealthIssuesOnly.value = false
+  searchKeyword.value = ''
+
+  // 导入摘要提示
+  const issueCount = props.entryList.entries.reduce(
+    (sum, e) => sum + entryHealthIssues(e).length, 0
+  )
+  const msgParts: string[] = []
+  msgParts.push(t('common.importSuccess') + ` (${importedCount} ${t('common.teams')})`)
+  if (warningsCount > 0) {
+    msgParts.push(warningsCount + ' ' + t('common.warnings'))
+  }
+  if (issueCount > 0) {
+    msgParts.push(issueCount + ' ' + t('common.healthIssues'))
+  }
+  notify.success(msgParts.join(' | '))
 }
 </script>
 
 <style scoped>
 .win11-toolbar {
-  @apply flex items-center justify-between;
+  @apply flex items-center justify-between flex-wrap gap-3;
   @apply bg-win11-surface rounded-lg p-4;
 }
 
 .win11-toolbar-left {
-  @apply flex items-center gap-3;
+  @apply flex items-center gap-3 flex-wrap;
 }
 
 .win11-toolbar-right {
@@ -629,6 +792,39 @@ function parseAndImportCsv(content: string) {
   @apply space-y-2;
 }
 
+.win11-driver-expand-btn {
+  @apply w-full flex items-center gap-2 p-2 rounded cursor-pointer;
+  @apply bg-win11-control-bg hover:bg-win11-control-hover-bg;
+  @apply text-win11-text-secondary text-sm;
+  @apply transition-all duration-200;
+}
+
+.driver-count-badge {
+  @apply w-5 h-5 rounded-full bg-win11-accent/20 text-win11-accent text-xs font-bold;
+  @apply flex items-center justify-center;
+}
+
+.driver-count-label {
+  @apply flex-1 text-left;
+}
+
+.expand-icon {
+  @apply w-4 h-4 transition-transform duration-200;
+}
+
+.expand-icon.expanded {
+  @apply rotate-180;
+}
+
+.health-badge {
+  @apply w-5 h-5 rounded-full bg-amber-500/20 text-amber-500;
+  @apply flex items-center justify-center;
+}
+
+.drivers-list-detail {
+  @apply space-y-2 mt-2;
+}
+
 .win11-driver-item {
   @apply flex items-center gap-2 p-2 rounded;
   @apply bg-win11-control-bg text-win11-text;
@@ -652,6 +848,10 @@ function parseAndImportCsv(content: string) {
   @apply text-xs font-mono text-win11-text-secondary;
 }
 
+.win11-driver-item.has-issue {
+  @apply border border-amber-500/30 bg-amber-500/5;
+}
+
 .win11-add-driver-btn {
   @apply w-full flex items-center justify-center gap-2 p-2 mt-2 rounded;
   @apply border border-dashed border-win11-border text-win11-text-secondary;
@@ -664,16 +864,87 @@ function parseAndImportCsv(content: string) {
   @apply text-center;
 }
 
+.entry-io-section {
+  @apply space-y-3;
+}
+
+.entry-io-section-title {
+  @apply text-sm font-semibold text-win11-text-secondary uppercase tracking-wide;
+  @apply px-1;
+}
+
+.entry-io-row {
+  @apply grid grid-cols-1 gap-3;
+}
+
+.entry-io-item {
+  @apply flex flex-col gap-2;
+}
+
+.entry-io-item-header {
+  @apply flex items-center gap-2;
+}
+
+.entry-io-dropzone {
+  @apply rounded-lg border border-win11-border bg-win11-control-bg;
+  @apply transition-colors duration-200;
+}
+
+.entry-io-dropzone:hover {
+  @apply border-win11-accent;
+}
+
+.entry-io-export-row {
+  @apply flex gap-3 flex-wrap;
+}
+
+.entry-io-export-item {
+  @apply flex flex-col items-center gap-1.5 flex-1 min-w-[120px];
+}
+
+.entry-io-export-hint {
+  @apply text-xs text-win11-text-secondary font-medium uppercase;
+}
+
+.csv-info-alert {
+  @apply mb-4;
+}
+
 .win11-file-input {
   @apply w-full p-4 rounded-lg;
-  @apply bg-win11-control-bg border border-win11-border;
-  @apply text-win11-text;
+  @apply bg-transparent border-none text-win11-text;
+  @apply file:mr-3 file:py-1 file:px-3 file:rounded file:border-0;
+  @apply file:text-sm file:font-medium file:text-win11-text file:bg-win11-control-hover-bg;
+  @apply file:cursor-pointer file:transition-colors file:duration-150;
+  @apply hover:file:bg-win11-surface;
 }
 
 .win11-checkbox {
   @apply w-4 h-4 rounded border-2 border-win11-border;
   @apply checked:bg-win11-accent checked:border-win11-accent;
   @apply focus:ring-2 focus:ring-win11-accent/50;
+}
+
+.win11-view-toggle {
+  @apply flex items-center gap-1 p-1 rounded-lg bg-win11-control-bg;
+}
+
+.view-toggle-btn {
+  @apply w-8 h-8 rounded-md flex items-center justify-center;
+  @apply text-win11-icon hover:text-win11-text hover:bg-win11-surface;
+  @apply transition-all duration-200;
+}
+
+.view-toggle-btn.active {
+  @apply bg-win11-surface text-win11-accent;
+}
+
+.win11-button.is-active {
+  @apply bg-amber-500/20 text-amber-500 border-amber-500/30;
+}
+
+.win11-button.warning {
+  @apply bg-amber-500/10 text-amber-500 border border-amber-500/20;
 }
 
 .win11-icon-btn {

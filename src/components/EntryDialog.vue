@@ -118,7 +118,7 @@
             </div>
             <div class="driver-summary-info">
               <span class="driver-summary-name">
-                {{ driver.firstName || t('common.unnamed') }} {{ driver.lastName }}
+                {{ driver.firstName }} {{ driver.lastName }}
               </span>
               <div class="driver-summary-meta">
                 <Win11Tag

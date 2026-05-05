@@ -211,7 +211,7 @@ export function defaultConfiguration(): Configuration {
 export function defaultSettings(): Settings {
   return {
     serverName: 'My ACC Server',
-    adminPassword: 'admin',
+    adminPassword: '',
     password: '',
     spectatorPassword: '',
     centralEntryListPath: '',
@@ -230,6 +230,17 @@ export function defaultSettings(): Settings {
     ignorePrematureDisconnects: 0,
     formationLapType: 3,
     configVersion: 1
+  }
+}
+
+/** 合并外部 settings 时保证管理员密码缺失或为 null 时为空字符串（默认不设置） */
+export function normalizeSettings(patch: Partial<Settings> | undefined): Settings {
+  const base = defaultSettings()
+  if (!patch) return base
+  return {
+    ...base,
+    ...patch,
+    adminPassword: patch.adminPassword ?? '',
   }
 }
 

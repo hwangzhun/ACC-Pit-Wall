@@ -50,7 +50,8 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 1. **基础配置**：在各个表单页面填写服务器参数，字段均有详细说明。
 2. **参赛名单管理 (Entrylist)**：
    - **手动添加**：直接编辑车队及车手信息。
-   - **CSV 导入**：支持批量导入，软件会根据 CSV 中的**队伍名称**自动进行编队。详细格式请参考 [CSV 导入指南 (Entrylist_CSV_Guide.md)](Entrylist_CSV_Guide.md)。
+   - **CSV 导入（推荐）**：支持批量导入，软件会根据 CSV 中的**队伍名称**自动进行编队。详细格式请参考 [CSV 导入指南 (Entrylist_CSV_Guide.md)](Entrylist_CSV_Guide.md)。
+   - **JSON 导入（高级）**：用于结构化备份恢复，导入完整 Entrylist JSON 文件。
    - **对照表**：详情参考 [id_reference.md](id_reference.md)。
 3. **BOP 设置**：手动调整或一键导入 LFM BOP 数据。
 4. **远程部署流程**：
@@ -92,7 +93,8 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 1. **Basic Config**: Fill in server parameters in form pages with detailed descriptions.
 2. **Entrylist Management**:
    - **Manual Entry**: Directly add/edit team and driver info.
-   - **CSV Import**: Batch import with **auto-grouping** based on team names. See the [CSV Import Guide (Entrylist_CSV_Guide.md)](Entrylist_CSV_Guide.md) for details.
+   - **CSV Import (Recommended)**: Batch import with **auto-grouping** based on team names. See the [CSV Import Guide (Entrylist_CSV_Guide.md)](Entrylist_CSV_Guide.md) for details.
+   - **JSON Import (Advanced)**: For structured backup and restore of full Entrylist JSON files.
    - **Reference**: See [id_reference.md](id_reference.md).
 3. **BOP Settings**: Manually adjust or import LFM BOP data.
 4. **Remote Deployment**:
@@ -124,26 +126,58 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 
 ## 更新日志  / Updatelog
 
-V2.0.1 - 2026/4/28
+### V2.0.2 - 2026/5/5
+- 新增卡片/表格双视图切换，支持展开车手列表与健康检查筛选，批量排查异常更高效。
+- 新增 Entrylist JSON 导入（高级）与导出入口，CSV 导入失败提示与成功摘要（队伍数/警告数/异常数）更清晰。
+- 密码输入框新增显示/隐藏按钮，表格列宽与溢出表现优化，整体交互更稳定。
+
+---
+
+- Added a toggle for switching between Card and Table views, now supporting the expansion of the driver list and health check filtering to facilitate more efficient batch troubleshooting of anomalies.
+- Added options for importing (Advanced) and exporting Entrylist JSON files; failure notifications and success summaries (displaying team count, warnings, and anomalies) for CSV imports are now clearer.
+- Added a show/hide button to password input fields; table column widths and overflow handling have been optimized, resulting in a more stable overall user experience.
+
+### V2.0.1 - 2026/4/28
 - 新增 Tauri 一键部署能力，部署更简单。
 - 修复赛事配置页“添加 Session”按钮缺失问题。
 - 修复滑块异常，交互更稳定。
 - 优化 SSH 连接与保活，远程操作更顺畅。
 - 支持从服务器读取赛事配置。
 
-V2.0.0 - 2026/4/21
+---
+
+- Added one-click deployment capability for Tauri, making deployment simpler.
+- Fixed an issue where the "Add Session" button was missing on the event configuration page.
+- Fixed slider anomalies, resulting in more stable interactions.
+- Optimized SSH connections and keep-alive mechanisms for smoother remote operations.
+- Added support for reading event configurations directly from the server.
+
+### V2.0.0 - 2026/4/21
 - **UI 全面升级**：从 Web 网页重构为 Tauri 桌面应用。
+
+---
+
 - **Complete UI overhaul**: Refactoring a Web Application into a Tauri Desktop App
 
-V1.1.1 - 2026/4/6
+### V1.1.1 - 2026/4/6
 - 项目展示名由 ACC Server Manager 更名为 **ACC Pitwall**（本地包名 `acc-pitwall`），因与其他项目重名。
+
+---
+
 - Renamed the product from **ACC Server Manager** to **ACC Pitwall** (local package name `acc-pitwall`) due to a naming conflict with another project.
 
-V1.1.0 - 2026/4/4
-- 在上传配置前加入弹窗二确认配置信息 Add a confirmation modal to verify configuration details before uploading.
+### V1.1.0 - 2026/4/4
+- 在上传配置前加入弹窗二确认配置信息
 
-V1.0.1 - 2026/3/31
+---
+
+- Add a confirmation modal to verify configuration details before uploading.
+
+### V1.0.1 - 2026/3/31
 - 修复 BOP 车辆滑块数值不正确 
+
+---
+
 - Fixed incorrect slider values ​​for BOP vehicles.
 
 ---

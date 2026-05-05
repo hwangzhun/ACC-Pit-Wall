@@ -31,6 +31,7 @@
           <Win11Input
             v-model="settings.password"
             type="password"
+            show-password-toggle
             :placeholder="t('common.optional')"
             :hint="passwordHint"
           />
@@ -41,7 +42,8 @@
           <Win11Input
             v-model="settings.adminPassword"
             type="password"
-            :placeholder="t('placeholder.pleaseInput')"
+            show-password-toggle
+            :placeholder="t('common.optional')"
             :hint="adminPasswordHint"
           />
         </div>
@@ -51,6 +53,7 @@
           <Win11Input
             v-model="settings.spectatorPassword"
             type="password"
+            show-password-toggle
             :placeholder="t('common.optional')"
             :hint="spectatorPasswordHint"
           />

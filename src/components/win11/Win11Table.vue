@@ -17,7 +17,7 @@
             :key="column.key"
             class="win11-table-cell"
             :class="{ 'is-sortable': column.sortable }"
-            :style="{ width: column.width, minWidth: column.minWidth }"
+            :style="cellStyle(column)"
             @click="() => column.sortable && handleSort(column.key)"
           >
             <slot :name="`header-${column.key}`">
@@ -53,7 +53,7 @@
             v-for="column in columns"
             :key="column.key"
             class="win11-table-cell"
-            :style="{ width: column.width, minWidth: column.minWidth }"
+            :style="cellStyle(column)"
           >
             <slot :name="`cell-${column.key}`" :row="row" :column="column" :$index="rowIndex">
               {{ getCellValue(row, column.key) }}
@@ -113,6 +113,16 @@ const selected = defineModel<Record<string, any>[]>('selected', { default: () =>
 const sortKey = ref<string | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('asc')
 const currentRowIndex = ref<number | null>(null)
+
+function cellStyle(column: Column): Record<string, string> {
+  if (column.width) {
+    return { flex: `0 0 ${column.width}`, width: column.width, minWidth: column.width }
+  }
+  if (column.minWidth) {
+    return { flex: '1 1 0', minWidth: column.minWidth }
+  }
+  return { flex: '1 1 auto' }
+}
 
 const isAllSelected = computed(() => {
   return props.data.length > 0 && props.data.every(row => isSelected(row))
@@ -258,7 +268,7 @@ defineExpose({ clearSelection })
 .win11-table-cell {
   @apply px-4 py-3;
   @apply text-sm text-win11-text;
-  @apply min-w-0 shrink;
+  @apply min-w-0 shrink overflow-hidden;
 }
 
 .win11-table-cell--selection {

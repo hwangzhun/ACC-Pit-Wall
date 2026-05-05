@@ -101,6 +101,7 @@ pub struct DeployResult {
 pub struct ConnectionStatus {
     pub connected: bool,
     pub host: Option<String>,
+    pub port: Option<u16>,
     pub username: Option<String>,
 }
 
@@ -186,11 +187,13 @@ pub fn get_ssh_status() -> ConnectionStatus {
         Some(c) => ConnectionStatus {
             connected: true,
             host: Some(c.config.host.clone()),
+            port: Some(c.config.port),
             username: Some(c.config.username.clone()),
         },
         None => ConnectionStatus {
             connected: false,
             host: None,
+            port: None,
             username: None,
         },
     }

@@ -90,6 +90,7 @@ import DeployLogPanel from '../components/deploy/DeployLogPanel.vue'
 import DeployServerFormDialog from '../components/deploy/DeployServerFormDialog.vue'
 import DeployUploadConfirmDialog from '../components/deploy/DeployUploadConfirmDialog.vue'
 import type { AllConfigs } from '../types/configuration'
+import { normalizeSettings } from '../types/defaults'
 import type { SshConfig } from '../types/server'
 import type { ServerFormData } from '../components/deploy/DeployServerFormDialog.vue'
 
@@ -165,7 +166,47 @@ const uploadConfirmVisible = ref(false)
 onMounted(async () => {
   await loadServerList()
   await refreshStatus()
+  await hydrateDeployFormFromSession()
 })
+
+async function hydrateDeployFormFromSession() {
+  const status = connectionStatus.value
+  if (!status.connected || !status.host || !status.username) return
+
+  const port = status.port || 22
+
+  // 在已保存服务器列表中查找匹配项（按 host + port + username）
+  const matched = serverList.value.find(s =>
+    s.host === status.host && s.port === port && s.username === status.username
+  )
+
+  if (matched) {
+    // 找到已保存档案：从磁盘加载完整 profile（恢复 password、serverPath 等）
+    const profile = await selectServer(matched.name)
+    if (profile) {
+      sshConfig.host = profile.config.host
+      sshConfig.port = profile.config.port
+      sshConfig.username = profile.config.username
+      sshConfig.password = profile.config.password || ''
+      sshConfig.serverPath = profile.serverPath || 'C:\\ACC_Server'
+      sshConfig.authType = profile.config.authType || 'password'
+    }
+  } else {
+    // 未找到档案（临时连接）：仅填充基本信息，password 置空
+    sshConfig.host = status.host
+    sshConfig.port = port
+    sshConfig.username = status.username
+    sshConfig.password = ''
+  }
+
+  // 已连接时恢复服务器运行状态
+  await checkServerStatus({
+    host: sshConfig.host,
+    port: sshConfig.port,
+    username: sshConfig.username,
+    password: sshConfig.password || '',
+  })
+}
 
 async function handleServerSelect(name: string) {
   if (!name) {
@@ -322,6 +363,10 @@ async function handlePullConfig() {
     emit('update:configs', {
       ...props.configs,
       ...pulled,
+      settings: normalizeSettings({
+        ...props.configs.settings,
+        ...(pulled.settings ?? {}),
+      }),
     })
   }
 }

@@ -10,7 +10,7 @@
       </span>
       <input
         :id="inputId"
-        :type="type"
+        :type="effectiveInputType"
         :value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
@@ -18,21 +18,46 @@
         class="win11-input"
         :class="[
           `win11-input--${size}`,
-          { 'has-clear': clearable && modelValue, 'error': error, 'has-prefix': $slots.prefix || prefixIcon }
+          {
+            'has-trailing-1': hasTrailingActions && trailingSlotCount === 1,
+            'has-trailing-2': hasTrailingActions && trailingSlotCount === 2,
+            'win11-input--hide-native-reveal': showPasswordToggle && type === 'password',
+            'error': error,
+            'has-prefix': $slots.prefix || prefixIcon
+          }
         ]"
         @input="handleInput"
         @change="emit('change', ($event.target as HTMLInputElement).value)"
       />
-      <button
-        v-if="clearable && modelValue"
-        type="button"
-        class="win11-input-clear"
-        @click="handleClear"
-      >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <div v-if="hasTrailingActions" class="win11-input-trailing">
+        <button
+          v-if="clearable && modelValue"
+          type="button"
+          class="win11-input-trailing-btn"
+          @click="handleClear"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <button
+          v-if="showPasswordToggle && type === 'password'"
+          type="button"
+          class="win11-input-trailing-btn"
+          :title="passwordPlain ? hidePasswordTitle : showPasswordTitle"
+          :aria-label="passwordPlain ? hidePasswordTitle : showPasswordTitle"
+          :aria-pressed="passwordPlain"
+          @click="passwordPlain = !passwordPlain"
+        >
+          <svg v-if="passwordPlain" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+          </svg>
+          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
+      </div>
       <span v-if="maxlength && showWordLimit" class="win11-input-count">
         {{ String(modelValue || '').length }}/{{ maxlength }}
       </span>
@@ -43,7 +68,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { t } from '../../i18n'
 
 const props = withDefaults(defineProps<{
   modelValue?: string | number
@@ -58,6 +84,11 @@ const props = withDefaults(defineProps<{
   prefixIcon?: 'search' | string
   maxlength?: number | string
   showWordLimit?: boolean
+  /**
+   * 在 type 为 password 时显示「显示/隐藏密码」切换。
+   * WebView2/Chromium 原生 ::ms-reveal 在失焦后常不再出现，故用自绘按钮并隐藏原生以免重复。
+   */
+  showPasswordToggle?: boolean
 }>(), {
   modelValue: '',
   type: 'text',
@@ -65,8 +96,46 @@ const props = withDefaults(defineProps<{
   disabled: false,
   size: 'default',
   clearable: false,
-  showWordLimit: false
+  showWordLimit: false,
+  showPasswordToggle: false
 })
+
+const passwordPlain = ref(false)
+
+const effectiveInputType = computed(() => {
+  if (props.type === 'password' && props.showPasswordToggle) {
+    return passwordPlain.value ? 'text' : 'password'
+  }
+  return props.type
+})
+
+function hasClearableValue(): boolean {
+  const v = props.modelValue
+  if (v === undefined || v === null) return false
+  if (typeof v === 'number') return true
+  return String(v).length > 0
+}
+
+const hasTrailingActions = computed(
+  () => (props.clearable && hasClearableValue()) || (props.showPasswordToggle && props.type === 'password')
+)
+
+const trailingSlotCount = computed(() => {
+  let n = 0
+  if (props.clearable && hasClearableValue()) n++
+  if (props.showPasswordToggle && props.type === 'password') n++
+  return n
+})
+
+const showPasswordTitle = computed(() => t('common.showPassword'))
+const hidePasswordTitle = computed(() => t('common.hidePassword'))
+
+watch(
+  () => [props.type, props.showPasswordToggle] as const,
+  () => {
+    passwordPlain.value = false
+  }
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -126,20 +195,27 @@ function handleClear() {
   padding-left: 36px;
 }
 
-.win11-input.has-clear {
-  padding-right: 32px;
+.win11-input.has-trailing-1 {
+  padding-right: 2.5rem;
 }
 
-
-.win11-input-prefix {
-  @apply absolute left-3 top-1/2 -translate-y-1/2;
-  @apply text-win11-text-secondary;
-  @apply pointer-events-none;
+.win11-input.has-trailing-2 {
+  padding-right: 4.25rem;
 }
 
-.win11-input-clear {
-  @apply absolute right-2 top-1/2 -translate-y-1/2;
-  @apply w-6 h-6 p-0 rounded;
+/* WebView2 / Edge：有内容后会出现内置「显示密码」，与自定义按钮重复 */
+.win11-input--hide-native-reveal::-ms-reveal,
+.win11-input--hide-native-reveal::-ms-clear {
+  display: none !important;
+}
+
+.win11-input-trailing {
+  @apply absolute right-1.5 top-1/2 -translate-y-1/2 z-[1];
+  @apply flex items-center gap-0.5;
+}
+
+.win11-input-trailing-btn {
+  @apply w-6 h-6 p-0 rounded shrink-0;
   @apply flex items-center justify-center;
   @apply bg-transparent border-none;
   @apply text-win11-text-secondary;
@@ -147,9 +223,15 @@ function handleClear() {
   @apply transition-colors duration-150;
 }
 
-.win11-input-clear:hover {
+.win11-input-trailing-btn:hover {
   @apply text-win11-text;
   background: var(--win11-control-hover-bg);
+}
+
+.win11-input-prefix {
+  @apply absolute left-3 top-1/2 -translate-y-1/2;
+  @apply text-win11-text-secondary;
+  @apply pointer-events-none;
 }
 
 .win11-input-count {

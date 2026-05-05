@@ -128,7 +128,8 @@ import {
   defaultEventRules,
   defaultAssistRules,
   defaultEntryList,
-  defaultBop
+  defaultBop,
+  normalizeSettings
 } from '../types/defaults'
 import { useLanguage, useTheme, t, currentLanguage as languageRef } from '../i18n'
 import logoImg from '../assets/logo.png'
@@ -192,7 +193,11 @@ const configs = ref<AllConfigs>({
 })
 
 function handleLoadPreset(payload: { configs: AllConfigs; presetName: string }) {
-  configs.value = JSON.parse(JSON.stringify(payload.configs))
+  const raw = JSON.parse(JSON.stringify(payload.configs)) as AllConfigs
+  configs.value = {
+    ...raw,
+    settings: normalizeSettings(raw.settings),
+  }
   activePresetName.value = payload.presetName
 }
 

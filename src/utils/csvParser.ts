@@ -169,8 +169,8 @@ export function parseCSV(content: string): ParseResult {
       continue
     }
 
-    if (!row.firstName || !row.lastName) {
-      warnings.push(`第 ${i + 1} 行：车手姓名不完整`)
+    if (!row.lastName) {
+      warnings.push(`第 ${i + 1} 行：车手姓氏为空，跳过`)
       continue
     }
 
