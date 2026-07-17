@@ -117,7 +117,7 @@ import { computed } from 'vue'
   background: transparent;
   border: none;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--type-body);
   color: var(--win11-text);
   outline: none;
 }

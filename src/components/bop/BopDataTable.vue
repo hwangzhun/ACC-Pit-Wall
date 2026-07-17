@@ -1,24 +1,5 @@
 <template>
   <div class="bop-data-table">
-    <div class="table-toolbar">
-      <div class="toolbar-left">
-        <span v-if="selectedCount > 0" class="selection-info">
-          {{ t('common.selected').replace('{count}', selectedCount.toString()) }} {{ t('common.items') }}
-        </span>
-      </div>
-      <div class="toolbar-right">
-        <Win11Input
-          :model-value="searchKeyword"
-          @update:model-value="$emit('update:searchKeyword', $event)"
-          :placeholder="t('placeholder.search')"
-          clearable
-          size="small"
-          prefix-icon="search"
-          style="width: 200px"
-        />
-      </div>
-    </div>
-
     <Win11Table
       :data="entries"
       :columns="columns"
@@ -128,7 +109,6 @@ import { getCarClass } from './utils'
 import { t } from '../../i18n'
 import {
   Win11Table,
-  Win11Input,
   Win11Image,
   Win11Progress,
   Win11Button
@@ -137,14 +117,12 @@ import {
 defineProps<{
   entries: BopEntry[]
   selectedCount: number
-  searchKeyword: string
 }>()
 
 const emit = defineEmits<{
   (e: 'edit', entry: BopEntry): void
   (e: 'delete', entry: BopEntry): void
   (e: 'selectionChange', rows: BopEntry[]): void
-  (e: 'update:searchKeyword', value: string): void
 }>()
 
 const selectedRows = ref<Record<string, any>[]>([])
@@ -244,7 +222,7 @@ defineExpose({ clearSelection: () => { selectedRows.value = [] } })
 }
 
 .selection-info {
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-accent);
 }
 
@@ -262,7 +240,7 @@ defineExpose({ clearSelection: () => { selectedRows.value = [] } })
 }
 
 .footer-info {
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-text-secondary);
 }
 
@@ -302,8 +280,8 @@ defineExpose({ clearSelection: () => { selectedRows.value = [] } })
 }
 
 .car-name {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
   white-space: nowrap;
   overflow: hidden;
@@ -311,12 +289,12 @@ defineExpose({ clearSelection: () => { selectedRows.value = [] } })
 }
 
 .car-class {
-  font-size: 11px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
 }
 
 .track-name {
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-text);
 }
 
@@ -332,8 +310,8 @@ defineExpose({ clearSelection: () => { selectedRows.value = [] } })
 }
 
 .ballast-value {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
 }
 
 .ballast-value.positive {
@@ -349,8 +327,8 @@ defineExpose({ clearSelection: () => { selectedRows.value = [] } })
 }
 
 .restrictor-value {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 

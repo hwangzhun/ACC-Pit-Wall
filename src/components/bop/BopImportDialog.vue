@@ -137,6 +137,7 @@ interface CacheStatus {
 
 const props = defineProps<{
   modelValue: boolean
+  currentTrack?: string
 }>()
 
 const emit = defineEmits<{
@@ -150,8 +151,9 @@ const dialogVisible = computed({
 })
 
 const defaultImportTrack = TRACKS[0] ?? 'monza'
+const initialImportTrack = () => props.currentTrack?.trim() || defaultImportTrack
 const importForm = ref({
-  track: defaultImportTrack,
+  track: initialImportTrack(),
   carClass: 'all' as CarClass | 'all'
 })
 
@@ -163,8 +165,11 @@ const isImporting = ref(false)
 const loadingMessage = ref('')
 const errorMessage = ref('')
 
-const trackOptions = computed(() => 
-  TRACKS.map(track => ({
+const trackOptions = computed(() =>
+  Array.from(new Set([
+    ...TRACKS,
+    ...(props.currentTrack?.trim() ? [props.currentTrack.trim()] : [])
+  ])).map(track => ({
     value: track,
     label: useTrackName(track).value
   }))
@@ -320,7 +325,7 @@ function handleCancel() {
 }
 
 function resetForm() {
-  importForm.value = { track: defaultImportTrack, carClass: 'all' }
+  importForm.value = { track: initialImportTrack(), carClass: 'all' }
   fullEntries.value = []
   errorMessage.value = ''
 }
@@ -353,7 +358,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 
 .cache-info {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
 }
 
@@ -378,8 +383,8 @@ watch(() => props.modelValue, (isOpen) => {
 
 .import-preview h5 {
   margin: 0 0 12px 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 
@@ -395,12 +400,12 @@ watch(() => props.modelValue, (isOpen) => {
 }
 
 .stat-label {
-  font-weight: 500;
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text-secondary);
 }
 
 .stat-value {
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 

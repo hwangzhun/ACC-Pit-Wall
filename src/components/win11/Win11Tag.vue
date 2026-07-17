@@ -28,8 +28,8 @@ withDefaults(defineProps<{
   display: inline-flex;
   align-items: center;
   padding: 0 8px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-emphasis);
   line-height: 1.6;
   border-radius: 4px;
   white-space: nowrap;
@@ -37,7 +37,7 @@ withDefaults(defineProps<{
 
 .win11-tag--small {
   height: 20px;
-  font-size: 11px;
+  font-size: var(--type-caption);
   padding: 0 6px;
 }
 

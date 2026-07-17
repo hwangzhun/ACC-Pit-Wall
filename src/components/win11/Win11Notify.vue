@@ -104,7 +104,7 @@ const { notifications, remove } = notify
 
 .win11-notify-message {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--type-body);
   color: var(--win11-text);
   line-height: 1.5;
 }

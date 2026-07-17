@@ -5,6 +5,26 @@ export default {
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {
+    fontSize: {
+      xs: ['var(--type-caption)', { lineHeight: '1.5' }],
+      sm: ['var(--type-body)', { lineHeight: '1.5' }],
+      base: ['var(--type-section)', { lineHeight: '1.4' }],
+      lg: ['var(--type-heading)', { lineHeight: '1.35' }],
+      xl: ['var(--type-heading)', { lineHeight: '1.35' }],
+      '2xl': ['var(--type-page)', { lineHeight: '1.25' }],
+      '3xl': ['var(--type-page)', { lineHeight: '1.25' }],
+    },
+    fontWeight: {
+      thin: 'var(--weight-regular)',
+      extralight: 'var(--weight-regular)',
+      light: 'var(--weight-regular)',
+      normal: 'var(--weight-regular)',
+      medium: 'var(--weight-emphasis)',
+      semibold: 'var(--weight-emphasis)',
+      bold: 'var(--weight-emphasis)',
+      extrabold: 'var(--weight-emphasis)',
+      black: 'var(--weight-emphasis)',
+    },
     extend: {
       colors: {
         tech: {

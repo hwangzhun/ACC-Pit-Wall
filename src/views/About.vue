@@ -10,7 +10,7 @@
           </div>
           <div>
             <h3 class="text-base font-semibold text-win11-text m-0">{{ t('nav.about') }}</h3>
-            <p class="text-xs text-win11-text-secondary m-0">Application Info</p>
+            <p class="text-xs text-win11-text-secondary m-0">{{ t('aboutPage.subtitle') }}</p>
           </div>
         </div>
       </template>
@@ -24,6 +24,11 @@
 
         <Win11Divider />
 
+        <div class="about-capabilities">
+          <div><strong>{{ t('aboutPage.configure') }}</strong><span>{{ t('aboutPage.configureDescription') }}</span></div>
+          <div><strong>{{ t('aboutPage.validate') }}</strong><span>{{ t('aboutPage.validateDescription') }}</span></div>
+          <div><strong>{{ t('aboutPage.deploy') }}</strong><span>{{ t('aboutPage.deployDescription') }}</span></div>
+        </div>
         <div class="win11-about-content">
           <p class="win11-section-kicker">{{ t('about.heading') }}</p>
           <p class="win11-body">{{ t('about.body') }}</p>
@@ -75,6 +80,7 @@ const logoHorizontalUrl = computed(() =>
 </script>
 
 <style scoped>
+.about-capabilities{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.about-capabilities>div{padding:14px;border:1px solid var(--win11-border);border-radius:9px;background:var(--win11-control-bg);text-align:left}.about-capabilities strong{display:block;margin-bottom:4px;font-size: var(--type-caption);color:var(--win11-text)}.about-capabilities span{font-size: var(--type-caption);line-height:1.45;color:var(--win11-text-secondary)}@media(max-width:650px){.about-capabilities{grid-template-columns:1fr}}
 .win11-about-hero {
   @apply flex flex-col items-center text-center py-8;
 }

@@ -67,7 +67,7 @@ function handleChange() {
   align-items: center;
   justify-content: center;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-text-secondary);
   background: var(--win11-control-bg);
   border: 1px solid var(--win11-border);

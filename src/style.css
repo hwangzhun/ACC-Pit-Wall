@@ -18,6 +18,9 @@
     font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     overflow: hidden;
+    font-size: var(--type-body);
+    font-weight: var(--weight-regular);
+    line-height: 1.5;
   }
 
   #app {
@@ -26,6 +29,15 @@
 }
 
 :root {
+  /* Shared typography scale: caption, body, section title, page title, metric. */
+  --type-caption: 0.75rem;
+  --type-body: 0.875rem;
+  --type-section: 1rem;
+  --type-heading: 1.125rem;
+  --type-page: 1.5rem;
+  --type-metric: 1.5rem;
+  --weight-regular: 400;
+  --weight-emphasis: 600;
   --win11-bg: #141414;
   --win11-surface: #1f1f1f;
   --win11-surface-hover: #2d2d2d;
@@ -388,4 +400,59 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-win11-control-hover-bg;
   }
+}
+
+/* Shared page summary cards — mirrors the Settings summary visual language. */
+.summary-cards {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+  gap: 9px !important;
+  margin-bottom: 14px;
+}
+.summary-cards > div,
+.summary-cards > article {
+  display: block !important;
+  min-width: 0;
+  padding: 11px 13px !important;
+  border: 1px solid var(--win11-border) !important;
+  border-radius: 9px !important;
+  background: var(--win11-control-bg) !important;
+}
+.summary-cards > div > span:first-child,
+.summary-cards > article > span:first-child {
+  display: block !important;
+  margin: 0 !important;
+  font-size: var(--type-caption) !important;
+  font-weight: var(--weight-regular) !important;
+  line-height: 1.35 !important;
+  color: var(--win11-text-secondary) !important;
+}
+.summary-cards > div > strong,
+.summary-cards > article > strong {
+  display: block !important;
+  margin-top: 3px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-body) !important;
+  font-weight: var(--weight-emphasis) !important;
+  line-height: 1.35 !important;
+  color: var(--win11-text) !important;
+}
+.summary-cards > article > small {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--type-caption);
+  color: var(--win11-text-secondary);
+}
+.summary-cards > .active,
+.summary-cards > .positive,
+.summary-cards > .allowed {
+  border-color: color-mix(in srgb, #258c5b 35%, var(--win11-border)) !important;
+}
+.summary-cards > .warning {
+  border-color: color-mix(in srgb, #d85b3f 45%, var(--win11-border)) !important;
+}
+@media (max-width: 620px) {
+  .summary-cards { grid-template-columns: 1fr !important; }
 }

@@ -152,7 +152,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.625rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   text-align: left;
   background: var(--win11-surface);
   border: 2px solid var(--win11-border);
@@ -208,7 +208,7 @@ onUnmounted(() => {
 .tech-select-search-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   background: var(--win11-control-bg);
   border: 1px solid var(--win11-border);
   border-radius: 0.25rem;
@@ -226,7 +226,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.625rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   text-align: left;
   color: var(--win11-text);
   @apply transition-colors duration-150;

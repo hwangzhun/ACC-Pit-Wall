@@ -10,12 +10,18 @@
           </div>
           <div>
             <h3 class="text-base font-semibold text-win11-text m-0">{{ t('deploy.sshConfig') }}</h3>
-            <p class="text-xs text-win11-text-secondary m-0">Server Deployment</p>
+            <p class="text-xs text-win11-text-secondary m-0">{{ t('deployPage.subtitle') }}</p>
           </div>
         </div>
       </template>
 
       <div class="space-y-6">
+        <div class="deploy-overview">
+          <div :class="{ complete: selectedServerName }"><span>1</span><p>{{ t('deployPage.selectStep') }}<small>{{ selectedServerName || t('deployPage.notSelected') }}</small></p></div>
+          <div :class="{ complete: isConnected }"><span>2</span><p>{{ t('deployPage.connectStep') }}<small>{{ isConnected ? t('deploy.connected') : t('deploy.notConnected') }}</small></p></div>
+          <div :class="{ complete: configUploadStatus }"><span>3</span><p>{{ t('deployPage.syncStep') }}<small>{{ configUploadStatus || t('deployPage.pending') }}</small></p></div>
+          <div :class="{ complete: serverRunning }"><span>4</span><p>{{ t('deployPage.runStep') }}<small>{{ serverRunning ? t('deployPage.running') : t('deployPage.stopped') }}</small></p></div>
+        </div>
         <DeploySshPanel
           :is-connected="isConnected"
           :connecting="connecting"
@@ -373,6 +379,7 @@ async function handlePullConfig() {
 </script>
 
 <style scoped>
+.deploy-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.deploy-overview>div{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--win11-border);border-radius:9px;background:var(--win11-control-bg);opacity:.68}.deploy-overview>div.complete{border-color:color-mix(in srgb,#258c5b 35%,var(--win11-border));opacity:1}.deploy-overview span{width:23px;height:23px;display:grid;place-items:center;flex:none;border-radius:50%;background:var(--win11-surface);color:var(--win11-text-secondary);font-size: var(--type-caption);font-weight: var(--weight-emphasis)}.deploy-overview .complete span{background:#258c5b;color:white}.deploy-overview p{margin:0;font-size: var(--type-caption);font-weight: var(--weight-emphasis);color:var(--win11-text)}.deploy-overview small{display:block;margin-top:2px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size: var(--type-caption);font-weight: var(--weight-regular);color:var(--win11-text-secondary)}@media(max-width:760px){.deploy-overview{grid-template-columns:1fr 1fr}}@media(max-width:460px){.deploy-overview{grid-template-columns:1fr}}
 .deploy-form {
   @apply p-6;
 }

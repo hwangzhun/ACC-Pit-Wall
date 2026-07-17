@@ -85,7 +85,11 @@
             <EventRulesForm v-else-if="activeTab === 'eventRules'" :eventRules="configs.eventRules" />
             <AssistRulesForm v-else-if="activeTab === 'assistRules'" :assistRules="configs.assistRules" />
             <EntryListForm v-else-if="activeTab === 'entryList'" :entryList="configs.entryList" />
-            <BopContainer v-else-if="activeTab === 'bop'" v-model:bop="configs.bop" />
+            <BopContainer
+              v-else-if="activeTab === 'bop'"
+              v-model:bop="configs.bop"
+              :current-track="configs.event.track"
+            />
             <DeployForm v-else-if="activeTab === 'deploy'" v-model:configs="configs" />
             <JsonPreview v-else-if="activeTab === 'preview'" :configs="configs" />
             <About v-else-if="activeTab === 'about'" />
@@ -269,14 +273,14 @@ function onActivePresetChange(name: string | null) {
 }
 
 .win11-header-title {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: var(--type-page);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
   margin-bottom: 0.25rem;
 }
 
 .win11-header-subtitle {
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   color: var(--win11-text-secondary);
 }
 
@@ -297,8 +301,8 @@ function onActivePresetChange(name: string | null) {
   height: 2.25rem;
   padding: 0 1rem;
   border-radius: 0.375rem;
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: var(--weight-emphasis);
+  font-size: var(--type-body);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -329,8 +333,8 @@ function onActivePresetChange(name: string | null) {
   display: inline-flex;
   align-items: center;
   padding: 0 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-emphasis);
   background: var(--win11-control-bg);
   color: var(--win11-text-secondary);
   border-radius: 0.25rem;

@@ -294,8 +294,8 @@ function handleCancel() {
 
 .panel-header h4 {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 
@@ -381,8 +381,8 @@ function handleCancel() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text-secondary);
 }
 
@@ -394,8 +394,8 @@ function handleCancel() {
 }
 
 .car-name {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--type-section);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
   line-height: 1.35;
   word-break: break-word;
@@ -409,7 +409,7 @@ function handleCancel() {
 }
 
 .car-id {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
 }
 
@@ -426,8 +426,8 @@ function handleCancel() {
 }
 
 .win11-form-label {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 

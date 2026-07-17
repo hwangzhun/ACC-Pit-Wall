@@ -16,6 +16,11 @@
         </div>
       </template>
 
+      <div class="settings-summary summary-cards">
+        <div><span>{{ t('settingsPage.server') }}</span><strong>{{ settings.serverName || t('settingsPage.unnamed') }}</strong></div>
+        <div><span>{{ t('settingsPage.capacity') }}</span><strong>{{ settings.maxCarSlots }}</strong></div>
+        <div><span>{{ t('settingsPage.access') }}</span><strong>{{ accessSummary }}</strong></div>
+      </div>
       <div class="win11-form-grid cols-2">
         <div class="win11-form-field">
           <label class="win11-form-label">{{ t('form.serverName') }}</label>
@@ -139,7 +144,7 @@
         </div>
       </template>
 
-      <div class="space-y-2">
+      <div class="settings-toggle-grid">
         <div
           v-for="(enabled, key) in toggleOptions"
           :key="key"
@@ -150,7 +155,7 @@
             <span class="win11-toggle-desc">{{ getToggleDescription(key) }}</span>
           </div>
           <Win11Toggle
-            :model-value="enabled ? 1 : 0"
+            :model-value="enabled"
             @update:model-value="updateToggle(key, $event)"
           />
         </div>
@@ -185,6 +190,14 @@ const carGroupOptions = computed(() =>
   CAR_GROUPS.map(group => ({ label: group, value: group }))
 )
 
+const accessSummary = computed(() => {
+  const parts = []
+  if (props.settings.password) parts.push(t('settingsPage.passwordProtected'))
+  if (props.settings.trackMedalsRequirement > 0) parts.push(t('settingsPage.medalRestricted'))
+  if (props.settings.safetyRatingRequirement >= 0) parts.push(t('settingsPage.ratingRestricted'))
+  return parts.length ? parts.join(' · ') : t('settingsPage.openAccess')
+})
+
 const medalOptions = computed(() => [
   { label: t('common.none'), value: 0 },
   { label: `1 ${t('common.medal')}`, value: 1 },
@@ -213,13 +226,14 @@ function getToggleDescription(key: string): string {
 
 type ToggleKey = 'isRaceLocked' | 'isLockedPrepPhase' | 'shortFormationLap' | 'allowAutoDQ' | 'ignorePrematureDisconnects' | 'randomizeTrackWhenEmpty' | 'dumpLeaderboards' | 'dumpEntryList'
 
-function updateToggle(key: string, value: number) {
+function updateToggle(key: string, value: number | boolean) {
   const toggleKey = key as ToggleKey
-  props.settings[toggleKey] = value as Settings[ToggleKey]
+  props.settings[toggleKey] = (value === true || value === 1 ? 1 : 0) as Settings[ToggleKey]
 }
 </script>
 
 <style scoped>
+.settings-summary{display:grid;grid-template-columns:1.4fr .6fr 1fr;gap:9px;margin-bottom:14px}.settings-summary>div{padding:11px 13px;border:1px solid var(--win11-border);border-radius:9px;background:var(--win11-control-bg)}.settings-summary span{display:block;font-size: var(--type-caption);color:var(--win11-text-secondary)}.settings-summary strong{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size: var(--type-body);color:var(--win11-text)}.settings-toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.settings-toggle-grid .win11-toggle-row{padding:11px 12px;border:1px solid var(--win11-border);border-radius:9px;background:var(--win11-control-bg)}@media(max-width:720px){.settings-summary,.settings-toggle-grid{grid-template-columns:1fr}}
 .win11-form-field {
   @apply flex flex-col gap-2;
 }

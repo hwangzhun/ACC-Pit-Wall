@@ -539,8 +539,8 @@ async function handleSubmit() {
 
 /* ---- 区块标题 ---- */
 .entry-section-title {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-emphasis);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--win11-text-secondary);
@@ -570,8 +570,8 @@ async function handleSubmit() {
 }
 
 .entry-label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text-secondary);
 }
 
@@ -600,7 +600,7 @@ async function handleSubmit() {
 }
 
 .entry-toggle-label {
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-text);
 }
 
@@ -618,14 +618,14 @@ async function handleSubmit() {
 }
 
 .driver-list-count {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: var(--type-metric);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
   line-height: 1;
 }
 
 .driver-list-label {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
 }
 
@@ -643,13 +643,13 @@ async function handleSubmit() {
 
 .driver-list-empty p {
   margin: 0;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 
 .driver-list-empty span {
-  font-size: 11px;
+  font-size: var(--type-caption);
 }
 
 /* ---- 车手摘要卡片 ---- */
@@ -691,8 +691,8 @@ async function handleSubmit() {
 }
 
 .driver-initial {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-accent);
 }
 
@@ -705,8 +705,8 @@ async function handleSubmit() {
 }
 
 .driver-summary-name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
   white-space: nowrap;
   overflow: hidden;
@@ -721,13 +721,13 @@ async function handleSubmit() {
 }
 
 .driver-summary-steam {
-  font-size: 11px;
+  font-size: var(--type-caption);
   font-family: 'Consolas', monospace;
   color: var(--win11-text-secondary);
 }
 
 .driver-summary-steam-error {
-  font-size: 11px;
+  font-size: var(--type-caption);
   color: rgb(var(--win11-error-text-rgb));
 }
 
@@ -786,7 +786,7 @@ async function handleSubmit() {
 }
 
 .driver-form-hint {
-  font-size: 11px;
+  font-size: var(--type-caption);
   color: rgb(var(--win11-warning-text-rgb));
   margin: 2px 0 0 0;
 }

@@ -98,14 +98,14 @@ function handleClose() {
 
 .win11-alert-title {
   margin: 0 0 4px 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 
 .win11-alert-description {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-text-secondary);
   line-height: 1.5;
 }

@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Vue](https://img.shields.io/badge/Vue-3.5+-4FC08D?logo=vue.js&logoColor=white)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0+-FFC131?logo=tauri&logoColor=white)
@@ -35,7 +35,7 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 
 #### 📥 下载与安装 (推荐)
 如果您只是想使用本工具，可以直接下载预编译的安装包：
-1. 前往 [Releases](https://github.com/hwangzhun/ACC-Server-Manager/releases) 页面。
+1. 前往 [Releases](https://github.com/hwangzhun/ACC-Pit-Wall/releases) 页面。
 2. 下载最新的 `.exe` 安装程序并运行。
 **注意**：目前仅支持 Windows 操作系统。
 
@@ -78,7 +78,7 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 ### � Quick Start
 
 #### 📥 Download & Install (Recommended)
-1. Go to the [Releases](https://github.com/hwangzhun/ACC-Server-Manager/releases) page.
+1. Go to the [Releases](https://github.com/hwangzhun/ACC-Pit-Wall/releases) page.
 2. Download and run the latest `.exe` installer.
 **Note**: Currently supports Windows only.
 
@@ -125,6 +125,21 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 ```
 
 ## 更新日志  / Updatelog
+
+### V2.0.4 - 2026/7/17
+- 全面优化赛事、服务器、辅助规则及预设管理页面，新增配置摘要、状态提示与更清晰的空状态展示。
+- 重构赛事规则配置，统一以分钟显示时间参数，并根据强制进站、加油及车手数量自动处理关联选项。
+- 增强 BOP 管理，支持赛道、车辆组别、关键词及已调整项目筛选，并新增数据统计、重复项提示、批量删除和快捷编辑。
+- 优化部署上传确认与部署流程展示，集中呈现赛事、天气、Session 和规则信息，部署状态更加直观。
+- 完善中英文界面文案、JSON 预览信息及响应式布局，并统一全局字号、字重和摘要卡片样式。
+
+---
+
+- Overhauled the event, server, assist rules, and preset management pages with configuration summaries, clearer status indicators, and improved empty states.
+- Reworked event rules configuration with minute-based time inputs and automatic handling of dependent options for mandatory stops, refuelling, and driver counts.
+- Enhanced BOP management with track, car class, keyword, and adjusted-entry filters, plus statistics, duplicate warnings, batch deletion, and streamlined editing.
+- Improved deployment confirmation and workflow visibility by presenting event, weather, session, and rule details in a clearer structure.
+- Expanded Chinese and English localization, enhanced JSON preview information and responsive layouts, and standardized typography and summary card styling.
 
 ### V2.0.3 - 2026/5/12
 - 部署上传前二次确认弹窗增强。
@@ -193,5 +208,5 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 ---
 
 <div align="center">
-Made with ❤️ for the ACC Community | [GitHub](https://github.com/hwangzhun/ACC-Server-Manager)
+Made with ❤️ for the ACC Community | [GitHub](https://github.com/hwangzhun/ACC-Pit-Wall)
 </div>

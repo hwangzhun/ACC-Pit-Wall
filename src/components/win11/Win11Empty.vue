@@ -40,7 +40,7 @@ withDefaults(defineProps<{
 
 .win11-empty-description {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-body);
   color: var(--win11-text-secondary);
 }
 

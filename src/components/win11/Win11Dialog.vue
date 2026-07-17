@@ -120,8 +120,8 @@ watch(visible, (newVal) => {
 
 .win11-dialog-title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--type-section);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 

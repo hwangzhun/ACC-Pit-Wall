@@ -10,12 +10,19 @@
           </div>
           <div>
             <h3 class="text-base font-semibold text-win11-text m-0">{{ t('form.trackAndWeather') }}</h3>
-            <p class="text-xs text-win11-text-secondary m-0">Track Conditions & Weather</p>
+            <p class="text-xs text-win11-text-secondary m-0">{{ t('eventPage.weatherSubtitle') }}</p>
           </div>
         </div>
       </template>
 
       <div class="space-y-6">
+        <div class="event-summary summary-cards">
+          <div><span>{{ t('form.track') }}</span><strong>{{ selectedTrackLabel }}</strong></div>
+          <div><span>{{ t('form.ambientTemp') }}</span><strong>{{ event.ambientTemp }}°C</strong></div>
+          <div><span>{{ t('eventPage.conditionsGroup') }}</span><strong>{{ weatherLabel }}</strong></div>
+          <div><span>{{ t('form.sessions') }}</span><strong>{{ event.sessions.length }}</strong></div>
+          <div><span>{{ t('form.sessionDurationMinutes') }}</span><strong>{{ totalSessionMinutes }} min</strong></div>
+        </div>
         <div class="win11-form-grid cols-2">
           <div class="win11-form-field">
             <label class="win11-form-label">{{ t('form.track') }}</label>
@@ -70,22 +77,22 @@
           <div class="win11-toggle-row">
             <div class="win11-toggle-info">
               <span class="win11-toggle-label">{{ t('form.isFixedConditionQualification') }}</span>
-              <span class="win11-toggle-desc">Fixed weather for qualifying</span>
+              <span class="win11-toggle-desc">{{ t('eventPage.fixedQualificationDescription') }}</span>
             </div>
             <Win11Toggle
-              :model-value="event.isFixedConditionQualification"
-              @update:model-value="event.isFixedConditionQualification = $event"
+              :model-value="event.isFixedConditionQualification === 1"
+              @update:model-value="event.isFixedConditionQualification = toFlag($event)"
             />
           </div>
 
           <div class="win11-toggle-row">
             <div class="win11-toggle-info">
               <span class="win11-toggle-label">{{ t('form.simracerWeatherConditions') }}</span>
-              <span class="win11-toggle-desc">Real weather conditions</span>
+              <span class="win11-toggle-desc">{{ t('eventPage.simracerDescription') }}</span>
             </div>
             <Win11Toggle
-              :model-value="event.simracerWeatherConditions"
-              @update:model-value="event.simracerWeatherConditions = $event"
+              :model-value="event.simracerWeatherConditions === 1"
+              @update:model-value="event.simracerWeatherConditions = toFlag($event)"
             />
           </div>
         </div>
@@ -102,7 +109,7 @@
           </div>
           <div>
             <h3 class="text-base font-semibold text-win11-text m-0">{{ t('form.timeSettings') }}</h3>
-            <p class="text-xs text-win11-text-secondary m-0">Session Timing Configuration</p>
+            <p class="text-xs text-win11-text-secondary m-0">{{ t('eventPage.timingSubtitle') }}</p>
           </div>
         </div>
       </template>
@@ -153,16 +160,16 @@
             </div>
             <div>
               <h3 class="text-base font-semibold text-win11-text m-0">{{ t('form.sessions') }}</h3>
-              <p class="text-xs text-win11-text-secondary m-0">Race Sessions Configuration</p>
+              <p class="text-xs text-win11-text-secondary m-0">{{ sessionSummary }}</p>
             </div>
           </div>
           <Win11Button @click="addSession" variant="primary">
-            + Add Session
+            + {{ t('eventPage.addSession') }}
           </Win11Button>
         </div>
       </template>
 
-      <div class="space-y-4">
+      <div v-if="event.sessions.length" class="space-y-4">
         <div v-for="(session, index) in event.sessions" :key="index"
              class="win11-session-card">
           <div class="flex items-center justify-between mb-4">
@@ -222,6 +229,11 @@
           </div>
         </div>
       </div>
+      <div v-else class="event-empty-state">
+        <strong>{{ t('eventPage.noSessions') }}</strong>
+        <p>{{ t('eventPage.noSessionsDescription') }}</p>
+        <Win11Button variant="primary" @click="addSession">+ {{ t('eventPage.addFirstSession') }}</Win11Button>
+      </div>
     </Win11Card>
   </div>
 </template>
@@ -238,6 +250,20 @@ const props = defineProps<{
 }>()
 
 const trackOptions = computed(() => getTrackOptions())
+const selectedTrackLabel = computed(() => trackOptions.value.find(option => option.value === props.event.track)?.label || props.event.track)
+const totalSessionMinutes = computed(() => props.event.sessions.reduce((sum, session) => sum + Math.max(0, Number(session.sessionDurationMinutes) || 0), 0))
+const sessionSummary = computed(() => props.event.sessions.length
+  ? t('eventPage.sessionSummary').replace('{count}', String(props.event.sessions.length)).replace('{minutes}', String(totalSessionMinutes.value))
+  : t('eventPage.sessionsSubtitle'))
+const weatherLabel = computed(() => {
+  if (props.event.rain >= 0.7) return t('weather.heavyRain')
+  if (props.event.rain >= 0.35) return t('weather.mediumRain')
+  if (props.event.rain > 0) return t('weather.lightRain')
+  if (props.event.cloudLevel >= 0.75) return t('weather.heavyCloud')
+  if (props.event.cloudLevel >= 0.4) return t('weather.mediumCloud')
+  if (props.event.cloudLevel > 0.1) return t('weather.lightCloud')
+  return t('weather.clear')
+})
 
 const sessionTypeOptions = computed(() => [
   { label: t('sessionTypes.practice'), value: 'P' },
@@ -257,6 +283,8 @@ const hourOptions = computed(() =>
     value: i
   }))
 )
+
+function toFlag(value: boolean | number): number { return value === true || value === 1 ? 1 : 0 }
 
 function getSessionTypeName(type: string): string {
   switch (type) {
@@ -295,6 +323,16 @@ function removeSession(index: number) {
 </script>
 
 <style scoped>
+.event-summary{display:flex;flex-wrap:wrap;gap:7px}
+.event-summary span{font-size: var(--type-caption);font-weight: var(--weight-emphasis);color:var(--win11-text)}
+.event-summary span+span:before{content:'·';margin-right:7px;color:var(--win11-text-secondary)}
+.weather-panel{padding:14px;border:1px solid var(--win11-border);border-radius:10px;background:var(--win11-surface)}
+.weather-panel-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.weather-panel-heading h4{margin:0 0 3px;font-size: var(--type-body);color:var(--win11-text)}
+.weather-panel-heading p{margin:0;font-size: var(--type-caption);color:var(--win11-text-secondary)}
+.weather-panel-heading>span{padding:4px 9px;border-radius:999px;background:color-mix(in srgb,var(--win11-accent) 12%,transparent);color:var(--win11-accent);font-size: var(--type-caption);font-weight: var(--weight-emphasis)}
+.event-empty-state{padding:28px;text-align:center;border:1px dashed var(--win11-border);border-radius:10px;color:var(--win11-text)}
+.event-empty-state p{margin:5px 0 14px;font-size: var(--type-caption);color:var(--win11-text-secondary)}
 .win11-form-field {
   @apply flex flex-col gap-2;
 }

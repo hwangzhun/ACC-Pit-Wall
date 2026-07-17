@@ -13,6 +13,11 @@
       width="820px"
       @open="loadPresets"
     >
+      <div class="preset-overview summary-cards">
+        <div><span>{{ t('preset.totalPresets') }}</span><strong>{{ presets.length }}</strong></div>
+        <div><span>{{ t('preset.searchResults') }}</span><strong>{{ filteredPresets.length }}</strong></div>
+        <div :class="{ active: activePresetName }"><span>{{ t('preset.currentPresetBanner') }}</span><strong>{{ activePresetName || t('preset.editingWithoutPreset') }}</strong></div>
+      </div>
       <div class="preset-manager">
         <div class="preset-list">
           <div class="preset-list-header">
@@ -25,6 +30,10 @@
             />
           </div>
           <div class="preset-list-content">
+            <div v-if="!filteredPresets.length" class="preset-search-empty">
+              <strong>{{ searchQuery ? t('preset.noSearchResults') : t('preset.noPresets') }}</strong>
+              <span>{{ searchQuery ? t('preset.tryAnotherSearch') : t('preset.saveFirstHint') }}</span>
+            </div>
             <div
               v-for="preset in filteredPresets"
               :key="preset.name"
@@ -58,7 +67,10 @@
 
         <div class="preset-detail">
           <div v-if="selectedPreset" class="preset-info">
-            <h4>{{ selectedPreset.name }}</h4>
+            <div class="preset-detail-heading">
+              <div><span class="preset-detail-kicker">{{ selectedPreset.name === activePresetName ? t('preset.inUse') : t('preset.selectedPreset') }}</span><h4>{{ selectedPreset.name }}</h4></div>
+              <span class="preset-state-dot" :class="{ active: selectedPreset.name === activePresetName }"></span>
+            </div>
             <div class="preset-info-highlight">
               <span class="preset-highlight-label">{{ t('form.track') }}</span>
               <Win11Tag type="primary">{{ trackLabel(selectedPreset.track) }}</Win11Tag>
@@ -94,6 +106,10 @@
               {{ t('preset.loadSelected') }}
             </Win11Button>
           </div>
+          <div v-if="selectedPreset" class="overwrite-warning">
+            <strong>{{ t('preset.overwriteTitle') }}</strong>
+            <span>{{ t('preset.updateHint') }}</span>
+          </div>
           <div class="preset-actions preset-actions-update">
             <Win11Button
               variant="warning"
@@ -105,7 +121,6 @@
               </svg>
               {{ t('preset.updateSelected') }}
             </Win11Button>
-            <span class="update-hint">{{ t('preset.updateHint') }}</span>
           </div>
 
           <div class="preset-actions preset-actions-secondary">
@@ -450,6 +465,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.preset-overview{display:grid;grid-template-columns:.55fr .55fr 1.9fr;gap:8px;margin-bottom:14px}.preset-overview>div{padding:9px 11px;border:1px solid var(--win11-border);border-radius:8px;background:var(--win11-control-bg)}.preset-overview span{display:block;font-size: var(--type-caption);color:var(--win11-text-secondary)}.preset-overview strong{display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size: var(--type-caption);color:var(--win11-text)}.preset-overview .active{border-color:color-mix(in srgb,#258c5b 35%,var(--win11-border))}.preset-overview .active strong{color:#258c5b}.preset-search-empty{display:flex;min-height:150px;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}.preset-search-empty strong{font-size: var(--type-caption);color:var(--win11-text)}.preset-search-empty span{margin-top:5px;font-size: var(--type-caption);line-height:1.4;color:var(--win11-text-secondary)}.preset-detail-heading{display:flex;align-items:flex-start;justify-content:space-between}.preset-detail-kicker{display:block;margin-bottom:3px;font-size: var(--type-caption);font-weight: var(--weight-emphasis);text-transform:uppercase;letter-spacing:.05em;color:var(--win11-accent)}.preset-state-dot{width:9px;height:9px;border-radius:50%;background:var(--win11-text-secondary)}.preset-state-dot.active{background:#258c5b;box-shadow:0 0 0 4px rgba(37,140,91,.12)}.overwrite-warning{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;padding:9px 11px;border-radius:8px;background:color-mix(in srgb,#d89b3f 10%,var(--win11-control-bg))}.overwrite-warning strong{font-size: var(--type-caption);color:#c9851b}.overwrite-warning span{font-size: var(--type-caption);line-height:1.4;color:var(--win11-text-secondary)}@media(max-width:680px){.preset-overview{grid-template-columns:1fr 1fr}.preset-overview>div:last-child{grid-column:1/-1}}
 .preset-manager {
   display: flex;
   height: 500px;
@@ -506,7 +522,7 @@ onMounted(() => {
 }
 
 .preset-item-name {
-  font-weight: 500;
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 
@@ -518,7 +534,7 @@ onMounted(() => {
 }
 
 .preset-item-date {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
 }
 
@@ -541,7 +557,7 @@ onMounted(() => {
 .preset-info h4 {
   margin: 0 0 12px 0;
   color: var(--win11-text);
-  font-size: 18px;
+  font-size: var(--type-heading);
 }
 
 .preset-info-highlight {
@@ -553,19 +569,19 @@ onMounted(() => {
 }
 
 .preset-highlight-label {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
 }
 
 .preset-description {
   color: var(--win11-text-secondary);
-  font-size: 14px;
+  font-size: var(--type-body);
   margin-bottom: 15px;
   line-height: 1.5;
 }
 
 .preset-meta {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
   line-height: 1.8;
 }
@@ -592,7 +608,7 @@ onMounted(() => {
 }
 
 .update-hint {
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--win11-text-secondary);
   line-height: 1.4;
   flex: 1;
@@ -613,8 +629,8 @@ onMounted(() => {
 }
 
 .save-context-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
   margin-bottom: 10px;
 }
@@ -632,7 +648,7 @@ onMounted(() => {
 
 .save-context-label {
   width: 72px;
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--win11-text-secondary);
   flex-shrink: 0;
 }
@@ -653,8 +669,8 @@ onMounted(() => {
 }
 
 .win11-form-label {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: var(--weight-emphasis);
   color: var(--win11-text);
 }
 
@@ -666,7 +682,7 @@ onMounted(() => {
 .win11-textarea {
   width: 100%;
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: var(--type-body);
   color: var(--win11-text);
   background: var(--win11-control-bg);
   border: 1px solid var(--win11-border);

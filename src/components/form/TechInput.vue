@@ -69,7 +69,7 @@ const isFocused = ref(false)
 .tech-input-field {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   background: var(--win11-surface);
   border: 2px solid var(--win11-border);
   border-radius: 0.5rem;
@@ -109,7 +109,7 @@ const isFocused = ref(false)
   position: absolute;
   right: 1rem;
   color: var(--win11-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   @apply pointer-events-none;
 }

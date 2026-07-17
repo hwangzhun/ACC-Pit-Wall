@@ -10,7 +10,7 @@
           </div>
           <div>
             <h3 class="text-base font-semibold text-win11-text m-0">{{ t('nav.jsonPreview') }}</h3>
-            <p class="text-xs text-win11-text-secondary m-0">Configuration JSON</p>
+            <p class="text-xs text-win11-text-secondary m-0">{{ t('previewPage.subtitle') }}</p>
           </div>
         </div>
       </template>
@@ -28,6 +28,12 @@
           </button>
         </div>
 
+        <div class="preview-meta summary-cards">
+          <div><span>{{ t('previewPage.currentFile') }}</span><strong>{{ activeFile }}</strong></div>
+          <div><span>{{ t('previewPage.lines') }}</span><strong>{{ jsonLineCount }}</strong></div>
+          <div><span>{{ t('previewPage.size') }}</span><strong>{{ jsonSize }}</strong></div>
+          <div><span>{{ t('previewPage.status') }}</span><strong class="valid">{{ t('previewPage.validJson') }}</strong></div>
+        </div>
         <div class="win11-json-container">
           <pre class="win11-json-content">{{ getJsonContent(activeFile) }}</pre>
         </div>
@@ -37,13 +43,13 @@
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            下载 {{ activeFile }}
+            {{ t('previewPage.download') }} {{ activeFile }}
           </Win11Button>
           <Win11Button variant="secondary" @click="copyToClipboard(activeFile)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
             </svg>
-            复制
+            {{ copied ? t('previewPage.copied') : t('previewPage.copy') }}
           </Win11Button>
         </div>
       </div>
@@ -52,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { AllConfigs } from '../types/configuration'
 import { downloadSingleConfig } from '../utils/configManager'
 import { t } from '../i18n'
@@ -63,6 +69,7 @@ const props = defineProps<{
 }>()
 
 const activeFile = ref('settings.json')
+const copied = ref(false)
 const configFiles = [
   'configuration.json',
   'settings.json',
@@ -83,6 +90,13 @@ const fileNameToKey: Record<string, keyof AllConfigs> = {
   'bop.json': 'bop'
 }
 
+const activeJson = computed(() => getJsonContent(activeFile.value))
+const jsonLineCount = computed(() => activeJson.value.split('\n').length)
+const jsonSize = computed(() => {
+  const bytes = new Blob([activeJson.value]).size
+  return bytes < 1024 ? String(bytes) + ' B' : (bytes / 1024).toFixed(1) + ' KB'
+})
+
 function getJsonContent(fileName: string): string {
   const key = fileNameToKey[fileName]
   return JSON.stringify(props.configs[key], null, 2)
@@ -100,6 +114,8 @@ async function downloadSingleFile(fileName: string) {
 function copyToClipboard(fileName: string) {
   const content = getJsonContent(fileName)
   navigator.clipboard.writeText(content).then(() => {
+    copied.value = true
+    window.setTimeout(() => { copied.value = false }, 1600)
   }).catch(err => {
     console.error('Copy failed:', err)
   })
@@ -107,6 +123,7 @@ function copyToClipboard(fileName: string) {
 </script>
 
 <style scoped>
+.preview-meta{display:grid;grid-template-columns:1.4fr repeat(3,.7fr);gap:8px}.preview-meta>div{padding:9px 11px;border:1px solid var(--win11-border);border-radius:8px;background:var(--win11-control-bg)}.preview-meta span{display:block;font-size: var(--type-caption);color:var(--win11-text-secondary)}.preview-meta strong{display:block;margin-top:2px;font-size: var(--type-caption);color:var(--win11-text)}.preview-meta .valid{color:#258c5b}.win11-tabs{overflow-x:auto}.win11-tab{flex:none}@media(max-width:650px){.preview-meta{grid-template-columns:1fr 1fr}}
 .win11-tabs {
   @apply flex gap-1 p-1 rounded-lg;
   @apply bg-win11-control-bg;
