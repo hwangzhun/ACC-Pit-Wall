@@ -22,7 +22,8 @@
   "bundle": {
     "active": true,
     "resources": {
-      "../acc-server.zip": "acc-server.zip"
+      "../acc-server.zip": "acc-server.zip",
+      "resources/LICENSE-WinSW.txt": "LICENSE-WinSW.txt"
     },
     "icon": [
       "icons/32x32.png",

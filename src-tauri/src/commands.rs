@@ -111,7 +111,13 @@ pub async fn check_acc_server_status_cmd(
 pub async fn stop_acc_server_cmd(
     ssh_config: SshConfig,
 ) -> Result<Value, String> {
-    match crate::ssh_utils::stop_acc_server(&ssh_config) {
+    let result = tokio::task::spawn_blocking(move || {
+        crate::ssh_utils::stop_acc_server(&ssh_config)
+    })
+    .await
+    .map_err(|e| format!("任务执行失败: {}", e))?;
+
+    match result {
         Ok(message) => Ok(serde_json::json!({
             "success": true,
             "message": message
@@ -193,6 +199,17 @@ pub async fn get_app_data_dir() -> Result<String, String> {
     let app_data = dirs::config_dir()
         .ok_or_else(|| "无法获取应用数据目录".to_string())?;
     Ok(app_data.to_string_lossy().to_string())
+}
+
+/// 获取当前主程序所在目录，用于查找同目录下的 acc-server.zip。
+#[tauri::command]
+pub fn get_app_exe_dir() -> Result<String, String> {
+    let executable = std::env::current_exe()
+        .map_err(|error| format!("无法获取主程序路径: {}", error))?;
+    let directory = executable
+        .parent()
+        .ok_or_else(|| format!("主程序路径没有父目录: {}", executable.display()))?;
+    Ok(directory.to_string_lossy().into_owned())
 }
 
 /// 当前工作目录下的 `acc-server.zip`（存在则返回绝对路径）

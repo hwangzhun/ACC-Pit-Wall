@@ -36,6 +36,7 @@ pub fn run() {
             delete_preset_cmd,
             rename_preset_cmd,
             get_app_data_dir,
+            get_app_exe_dir,
             get_server_list,
             save_server_cmd,
             load_server_cmd,

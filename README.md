@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Vue](https://img.shields.io/badge/Vue-3.5+-4FC08D?logo=vue.js&logoColor=white)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0+-FFC131?logo=tauri&logoColor=white)
@@ -55,8 +55,10 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
    - **对照表**：详情参考 [id_reference.md](id_reference.md)。
 3. **BOP 设置**：手动调整或一键导入 LFM BOP 数据。
 4. **远程部署流程**：
-   - 远程服务器需启用 OpenSSH (可用内置 [install_openssh.ps1](install_openssh.ps1) 脚本)。
-   - 配置 SSH 连接信息，确保 `acc-server.zip` 与主程序在同一目录，点击部署并运行。
+   - 远程服务器需启用 OpenSSH (可用内置 [install_openssh.ps1](install_openssh.ps1) 脚本)，SSH 账户必须具有管理员权限。
+   - 配置 SSH 连接信息，确保 `acc-server.zip` 与主程序在同一目录，然后上传 ACC Server。
+   - 程序会自动安装固定名为 `ACCPitWallServer` 的 Windows 服务；以后通过 `sc.exe` 启动、停止和查询服务，SSH 断开不会终止 ACC Server。
+   - 已有旧版部署无需重新上传：先停止旧方式运行的 `accServer.exe`，下次启动会自动完成服务迁移。
 
 ### 🛡️ 关于安全性
 - **风险提示**：连接信息以明文存储。若服务器存有重要资料，建议手动输入密码而非保存。
@@ -98,8 +100,10 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
    - **Reference**: See [id_reference.md](id_reference.md).
 3. **BOP Settings**: Manually adjust or import LFM BOP data.
 4. **Remote Deployment**:
-   - Enable OpenSSH on the remote server (script [install_openssh.ps1](install_openssh.ps1) provided).
-   - Configure SSH, ensure `acc-server.zip` is in the same directory, then deploy and run.
+   - Enable OpenSSH on the remote server (script [install_openssh.ps1](install_openssh.ps1) provided) and use an SSH account with administrator privileges.
+   - Configure SSH, keep `acc-server.zip` beside the application, then upload ACC Server.
+   - The application installs a Windows service named `ACCPitWallServer` and uses `sc.exe` for start, stop, and status operations, so disconnecting SSH does not terminate ACC Server.
+   - Existing deployments do not need another upload: stop the legacy `accServer.exe` process once, and the next start automatically migrates it to the service.
 
 ### 🛡️ Security Note
 - **Warning**: Connection info is stored in plain text. Use manual entry if the server contains sensitive data.
@@ -113,6 +117,11 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 - **Desktop**: Tauri (Rust-based)
 - **Service**: Node.js + Express (SSH & File operations)
 
+### 📦 第三方组件 / Third-party component
+
+- [WinSW 2.12.0](https://github.com/winsw/winsw/releases/tag/v2.12.0) 用于将 `accServer.exe` 包装为 Windows 服务，采用 MIT 许可证；许可证副本位于 `src-tauri/resources/LICENSE-WinSW.txt`。
+- 内置 `WinSW-x64.exe` 的 SHA-256 为 `05b82d46ad331cc16bdc00de5c6332c1ef818df8ceefcd49c726553209b3a0da`。
+
 ## 📂 项目结构 / Structure
 
 ```text
@@ -125,6 +134,21 @@ A modern configuration tool for **Assetto Corsa Competizione (ACC)** game server
 ```
 
 ## 更新日志  / Updatelog
+
+### V2.0.5 - 2026/8/16
+- 重构预设管理工作流，新增侧栏快速切换、当前预设状态、配置摘要与差异对比，并支持保存修改、另存为及恢复已保存版本。
+- 新增未保存修改检测与切换保护，可在切换预设前选择保存、放弃或取消；密码字段仅提示发生变化，不显示具体内容。
+- 加强预设文件安全性，统一校验预设名称，并阻止空名称、重复预设及文件名清理后产生的冲突，避免误覆盖、误删除或误重命名。
+- 将远程 ACC Server 改为由固定的 Windows 服务托管，支持部署时自动安装或更新、稳定启停与状态检测，并兼容旧版进程的平滑迁移。
+- 完善部署前检查、管理员权限提示、内置 WinSW 完整性校验及主程序同目录 `acc-server.zip` 自动识别，并新增配置差异与 Windows 服务相关测试。
+
+---
+
+- Reworked the preset management workflow with sidebar quick switching, active preset status, configuration summaries and comparisons, plus save, save-as, and restore actions.
+- Added unsaved-change detection and switch protection, allowing edits to be saved, discarded, or kept before changing presets; password changes are reported without exposing their values.
+- Strengthened preset file safety with consistent name validation and protection against empty names, duplicates, and sanitized filename collisions that could overwrite, delete, or rename another preset.
+- Moved remote ACC Server management to a fixed Windows service with automatic installation or refresh during deployment, reliable start/stop/status operations, and migration support for legacy processes.
+- Improved deployment preflight checks, administrator permission guidance, embedded WinSW integrity verification, and automatic detection of `acc-server.zip` beside the application, with added tests for configuration diffs and Windows service handling.
 
 ### V2.0.4 - 2026/7/17
 - 全面优化赛事、服务器、辅助规则及预设管理页面，新增配置摘要、状态提示与更清晰的空状态展示。

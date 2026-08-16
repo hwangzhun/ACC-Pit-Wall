@@ -6,9 +6,7 @@ export interface Preset {
   description: string
   createdAt: string
   updatedAt: string
-  /** 来自 configs.event.track */
   track?: string
-  /** 来自 configs.settings.carGroup */
   carGroup?: string
 }
 
@@ -30,36 +28,33 @@ function toCamelCase(obj: Record<string, unknown>): Record<string, unknown> {
   return result
 }
 
-// 获取预设列表
+function requirePresetName(name: string): string {
+  const normalized = name.trim()
+  if (!normalized) throw new Error('Preset name cannot be empty')
+  return normalized
+}
+
 export async function getPresets(): Promise<Preset[]> {
   const result = await invoke<Record<string, unknown>[]>('get_preset_list')
-  return result.map((item) => toCamelCase(item) as unknown as Preset)
+  return result.map(item => toCamelCase(item) as unknown as Preset)
 }
 
-// 保存预设
 export async function savePreset(name: string, description: string, configs: AllConfigs): Promise<void> {
-  await invoke('save_preset_cmd', { name, description, configs })
+  await invoke('save_preset_cmd', { name: requirePresetName(name), description: description.trim(), configs })
 }
 
-/** 覆盖已有预设的 configs（不修改描述时传 undefined） */
-export async function updatePreset(
-  name: string,
-  configs: AllConfigs,
-  description?: string
-): Promise<void> {
+export async function updatePreset(name: string, configs: AllConfigs, description?: string): Promise<void> {
   await invoke('update_preset_cmd', {
-    name,
+    name: requirePresetName(name),
     configs,
-    new_description: description
+    new_description: description?.trim()
   })
 }
 
-// 加载预设
 export async function loadPreset(name: string): Promise<PresetWithData> {
-  const result = await invoke<Record<string, unknown>>('load_preset_cmd', { name })
+  const result = await invoke<Record<string, unknown>>('load_preset_cmd', { name: requirePresetName(name) })
   const camelCaseResult = toCamelCase(result) as unknown as Record<string, unknown>
-  
-  const preset: PresetWithData = {
+  return {
     ...camelCaseResult,
     name: camelCaseResult.name as string,
     description: (camelCaseResult.description as string) ?? '',
@@ -67,20 +62,16 @@ export async function loadPreset(name: string): Promise<PresetWithData> {
     createdAt: camelCaseResult.createdAt as string,
     updatedAt: camelCaseResult.updatedAt as string
   }
-  
-  return preset
 }
 
-// 重命名预设
 export async function renamePreset(oldName: string, newName: string, description?: string): Promise<void> {
   await invoke('rename_preset_cmd', {
-    oldName,
-    newName,
-    newDescription: description
+    oldName: requirePresetName(oldName),
+    newName: requirePresetName(newName),
+    newDescription: description?.trim()
   })
 }
 
-// 删除预设
 export async function deletePreset(name: string): Promise<void> {
-  await invoke('delete_preset_cmd', { name })
+  await invoke('delete_preset_cmd', { name: requirePresetName(name) })
 }

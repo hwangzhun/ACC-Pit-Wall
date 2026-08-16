@@ -1,3 +1,7 @@
+use crate::acc_service::{
+    check_acc_service_running, prepare_service_after_deploy, preflight_server_replacement,
+    start_acc_service, stop_acc_service,
+};
 use ssh2::Session;
 use std::net::TcpStream;
 use std::io::{Write, Read};
@@ -377,19 +381,12 @@ pub fn deploy_configs(
         }
     }
 
-    // 如果需要启动服务器
     if options.start_server {
-        let server_exe_path = format!("{}\\accServer.exe", server_path);
-        let command = format!(
-            "Start-Process -FilePath \"{}\" -WorkingDirectory \"{}\"",
-            server_exe_path, server_path
-        );
-        
-        match upload_file_via_ssh(config, &format!("{}\\.start", server_path), &command) {
-            Ok(_) => {},
-            Err(e) => {
-                eprintln!("启动服务器警告: {}", e);
-            },
+        if let Err(error) = start_acc_server(config, &server_path) {
+            return DeployResult {
+                success: false,
+                error: Some(format!("配置已上传，但启动 ACC Windows 服务失败: {}", error)),
+            };
         }
     }
 
@@ -406,6 +403,7 @@ pub fn download_acc_server(
     download_url: &str,
 ) -> Result<String, String> {
     with_session(config, |session| {
+        let server_path = preflight_server_replacement(session, server_path)?;
         let mkdir_cmd = format!(
             "New-Item -ItemType Directory -Force -Path \"{}\"",
             server_path
@@ -451,10 +449,14 @@ pub fn download_acc_server(
                 output_str.trim(), stderr_str.trim()));
         }
 
+        prepare_service_after_deploy(session, &server_path)?;
         if !output_str.is_empty() {
-            Ok(format!("ACC服务器下载完成: {}", output_str.trim()))
+            Ok(format!(
+                "ACC服务器下载完成，Windows 服务已安装: {}",
+                output_str.trim()
+            ))
         } else {
-            Ok("ACC服务器下载完成".to_string())
+            Ok("ACC服务器下载完成，Windows 服务已安装".to_string())
         }
     })
 }
@@ -478,7 +480,7 @@ pub fn upload_acc_server_from_local(
     }
 
     with_session(config, |session| {
-        let server_path = normalize_windows_path(server_path);
+        let server_path = preflight_server_replacement(session, server_path)?;
         
         let mkdir_cmd = format!(
             r#"New-Item -ItemType Directory -Force -Path "{}""#,
@@ -653,186 +655,35 @@ pub fn upload_acc_server_from_local(
             return Err(format!("VC_redist安装失败: {}", install_output_str.trim()));
         }
 
-        if install_output_str.contains("VC_REDIST_NOT_FOUND") {
-            return Ok(format!("ACC服务器上传并解压完成，未找到VC_redist安装包 ({}字节)", file_size));
-        }
+        let deployment_message = if install_output_str.contains("VC_REDIST_NOT_FOUND") {
+            format!("ACC服务器上传并解压完成，未找到VC_redist安装包 ({}字节)", file_size)
+        } else if install_output_str.contains("VC_REDIST_INSTALLED") {
+            format!("ACC服务器上传、解压并安装完成，VC_redist安装成功 ({}字节)", file_size)
+        } else {
+            format!("ACC服务器上传并解压完成 ({}字节)", file_size)
+        };
 
-        if install_output_str.contains("VC_REDIST_INSTALLED") {
-            return Ok(format!("ACC服务器上传、解压并安装完成，VC_redist安装成功 ({}字节)", file_size));
-        }
-
-        Ok(format!("ACC服务器上传并解压完成 ({}字节)", file_size))
+        prepare_service_after_deploy(session, &server_path)?;
+        Ok(format!("{}，Windows 服务已安装", deployment_message))
     })
 }
 
-/// 启动ACC服务器
-///
-/// 通过 Windows 计划任务启动 accServer.exe。
-/// Windows OpenSSH 会将 SSH channel 的所有子进程放入 Job Object，
-/// channel 关闭时 Job Object 会终止所有子进程。
-/// 计划任务在独立会话中运行，不受 Job Object 管控，进程可持久存活。
+/// 通过 Windows 服务启动 ACC 服务器。
 pub fn start_acc_server(
     config: &SshConfig,
     server_path: &str,
 ) -> Result<String, String> {
-    with_session(config, |session| {
-        let normalized_path = normalize_windows_path(server_path);
-
-        let ps_script = format!(
-            concat!(
-                "$ErrorActionPreference = 'Stop'; ",
-                "$existing = Get-Process accServer -ErrorAction SilentlyContinue; ",
-                "if ($existing) {{ Write-Output ('ALREADY_RUNNING:' + ($existing.Id -join ',')); exit 0 }}; ",
-                "$taskName = 'ACCServer_' + (Get-Random); ",
-                "$action = New-ScheduledTaskAction -Execute '{}\\accServer.exe' -WorkingDirectory '{}'; ",
-                "$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest; ",
-                "$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; ",
-                "Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings -Force | Out-Null; ",
-                "Start-ScheduledTask -TaskName $taskName; ",
-                "$waited = 0; ",
-                "do {{ ",
-                "  Start-Sleep -Milliseconds 500; ",
-                "  $waited += 500; ",
-                "  $proc = Get-Process accServer -ErrorAction SilentlyContinue | Select-Object -First 1; ",
-                "}} while (-not $proc -and $waited -lt 8000); ",
-                "$taskInfo = Get-ScheduledTaskInfo -TaskName $taskName; ",
-                "$taskResult = $taskInfo.LastTaskResult; ",
-                "Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue; ",
-                "$proc = Get-Process accServer -ErrorAction SilentlyContinue | Select-Object -First 1; ",
-                "if ($proc) {{ Write-Output ('STARTED:' + $proc.Id) }} else {{ throw ('ACC服务器启动失败：进程未运行。TaskResult=' + $taskResult) }}"
-            ),
-            normalized_path, normalized_path
-        );
-
-        let cmd = format!(
-            "powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand {}",
-            encode_powershell_command(&ps_script)
-        );
-
-        let mut channel = session.channel_session()
-            .map_err(|e| format!("创建通道失败: {}", e))?;
-        channel.exec(&cmd)
-            .map_err(|e| format!("执行启动命令失败: {}", e))?;
-
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        channel.read_to_end(&mut stdout).ok();
-        channel.stderr().read_to_end(&mut stderr).ok();
-        channel.wait_close().ok();
-
-        let out = String::from_utf8_lossy(&stdout).trim().to_string();
-        let err = String::from_utf8_lossy(&stderr);
-
-        let exit_code = channel.exit_status().unwrap_or(-1);
-        if exit_code != 0 || out.is_empty() {
-            let mut msg = if err.trim().is_empty() || err.contains("CLIXML") {
-                format!("启动失败 (exit={})", exit_code)
-            } else {
-                err.trim().to_string()
-            };
-            if !out.is_empty() {
-                msg.push_str(&format!("\nstdout: {}", out));
-            }
-            return Err(msg);
-        }
-
-        if let Some(pids) = out.strip_prefix("ALREADY_RUNNING:") {
-            return Ok(format!("ACC服务器已在运行中 (PID: {})", pids));
-        }
-
-        if let Some(pid) = out.strip_prefix("STARTED:") {
-            return Ok(format!("ACC服务器启动成功 (PID: {})", pid));
-        }
-
-        Ok(format!("ACC服务器启动成功 (PID: {})", out))
-    })
+    with_session(config, |session| start_acc_service(session, server_path))
 }
 
-/// 停止ACC服务器
-pub fn stop_acc_server(
-    config: &SshConfig,
-) -> Result<String, String> {
-    with_session(config, |session| {
-        let ps_script = concat!(
-            "$ErrorActionPreference = 'Stop'; ",
-            "$procs = Get-Process accServer -ErrorAction SilentlyContinue; ",
-            "if (-not $procs) { throw '服务器未在运行中' }; ",
-            "$pids = $procs.Id -join ','; ",
-            "$procs | Stop-Process -Force; ",
-            "Start-Sleep -Seconds 2; ",
-            "$remaining = Get-Process accServer -ErrorAction SilentlyContinue; ",
-            "if ($remaining) { throw '服务器未能停止 (PID: ' + ($remaining.Id -join ',') + ')' }; ",
-            "Write-Output ('STOPPED:' + $pids)"
-        );
-
-        let cmd = format!(
-            "powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand {}",
-            encode_powershell_command(ps_script)
-        );
-
-        let mut channel = session.channel_session()
-            .map_err(|e| format!("创建通道失败: {}", e))?;
-
-        channel.exec(&cmd)
-            .map_err(|e| format!("执行停止命令失败: {}", e))?;
-
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        channel.read_to_end(&mut stdout).ok();
-        channel.stderr().read_to_end(&mut stderr).ok();
-        channel.wait_close().ok();
-
-        let out = String::from_utf8_lossy(&stdout).trim().to_string();
-        let err = String::from_utf8_lossy(&stderr);
-
-        let exit_code = channel.exit_status().unwrap_or(-1);
-        if exit_code != 0 {
-            let msg = if err.trim().is_empty() || err.contains("CLIXML") {
-                if out.is_empty() {
-                    format!("停止失败 (exit={})", exit_code)
-                } else {
-                    out.clone()
-                }
-            } else {
-                err.trim().to_string()
-            };
-            return Err(msg);
-        }
-
-        if out.starts_with("STOPPED:") {
-            let killed_pids = out.trim_start_matches("STOPPED:");
-            Ok(format!("ACC服务器已停止 (PID: {})", killed_pids))
-        } else {
-            Ok("ACC服务器已停止".to_string())
-        }
-    })
+/// 通过 Windows 服务停止 ACC 服务器，并兼容清理旧版进程。
+pub fn stop_acc_server(config: &SshConfig) -> Result<String, String> {
+    with_session(config, stop_acc_service)
 }
 
-/// 检测ACC服务器进程是否在运行
+/// 检测 Windows 服务或迁移前的旧版 ACC 进程是否正在运行。
 pub fn check_acc_server_running(config: &SshConfig) -> Result<bool, String> {
-    with_session(config, |session| {
-        let ps_script = concat!(
-            "$proc = Get-Process accServer -ErrorAction SilentlyContinue | Select-Object -First 1; ",
-            "if ($proc) { Write-Output ('RUNNING:' + $proc.Id) } else { Write-Output 'STOPPED' }"
-        );
-
-        let cmd = format!(
-            "powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand {}",
-            encode_powershell_command(ps_script)
-        );
-
-        let mut channel = session.channel_session()
-            .map_err(|e| format!("创建通道失败: {}", e))?;
-        channel.exec(&cmd)
-            .map_err(|e| format!("执行检测命令失败: {}", e))?;
-
-        let mut stdout = Vec::new();
-        channel.read_to_end(&mut stdout).ok();
-        channel.wait_close().ok();
-
-        let out = String::from_utf8_lossy(&stdout).trim().to_string();
-        Ok(out.starts_with("RUNNING:"))
-    })
+    with_session(config, check_acc_service_running)
 }
 
 pub fn download_results(

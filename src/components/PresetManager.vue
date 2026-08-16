@@ -1,702 +1,216 @@
 <template>
-  <div>
-    <Win11Button variant="primary" @click="dialogVisible = true">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-      </svg>
-      {{ t('preset.title') }}
-    </Win11Button>
-
-    <Win11Dialog
-      v-model="dialogVisible"
-      :title="t('preset.title')"
-      width="820px"
-      @open="loadPresets"
-    >
-      <div class="preset-overview summary-cards">
-        <div><span>{{ t('preset.totalPresets') }}</span><strong>{{ presets.length }}</strong></div>
-        <div><span>{{ t('preset.searchResults') }}</span><strong>{{ filteredPresets.length }}</strong></div>
-        <div :class="{ active: activePresetName }"><span>{{ t('preset.currentPresetBanner') }}</span><strong>{{ activePresetName || t('preset.editingWithoutPreset') }}</strong></div>
+  <Win11Dialog
+    v-model="visible"
+    :title="t('preset.title')"
+    width="min(920px, calc(100vw - 32px))"
+    @open="$emit('refresh')"
+  >
+    <div class="manager-toolbar">
+      <div>
+        <strong>{{ t('preset.managerHeading') }}</strong>
+        <span>{{ t('preset.managerHint') }}</span>
       </div>
-      <div class="preset-manager">
-        <div class="preset-list">
-          <div class="preset-list-header">
-            <Win11Input
-              v-model="searchQuery"
-              :placeholder="t('preset.searchPlaceholder')"
-              prefix-icon="search"
-              clearable
-              size="small"
-            />
+      <Win11Button variant="primary" :disabled="busy" @click="$emit('save-as')">+ {{ t('preset.saveAsCurrent') }}</Win11Button>
+    </div>
+
+    <div class="preset-manager">
+      <section class="preset-list">
+        <Win11Input
+          v-model="searchQuery"
+          :placeholder="t('preset.searchPlaceholder')"
+          prefix-icon="search"
+          clearable
+          size="small"
+        />
+        <div class="preset-list-content">
+          <div v-if="!filteredPresets.length" class="preset-empty">
+            <strong>{{ searchQuery ? t('preset.noSearchResults') : t('preset.noPresets') }}</strong>
+            <span>{{ searchQuery ? t('preset.tryAnotherSearch') : t('preset.saveFirstHint') }}</span>
           </div>
-          <div class="preset-list-content">
-            <div v-if="!filteredPresets.length" class="preset-search-empty">
-              <strong>{{ searchQuery ? t('preset.noSearchResults') : t('preset.noPresets') }}</strong>
-              <span>{{ searchQuery ? t('preset.tryAnotherSearch') : t('preset.saveFirstHint') }}</span>
+          <button
+            v-for="preset in filteredPresets"
+            :key="preset.name"
+            type="button"
+            class="preset-item"
+            :class="{ selected: selectedPresetName === preset.name, active: activePresetName === preset.name }"
+            :disabled="busy"
+            @click="$emit('select', preset.name)"
+          >
+            <div class="preset-name-row">
+              <strong :title="preset.name">{{ preset.name }}</strong>
+              <Win11Tag v-if="activePresetName === preset.name" size="small" type="success">{{ t('preset.inUse') }}</Win11Tag>
             </div>
-            <div
-              v-for="preset in filteredPresets"
-              :key="preset.name"
-              class="preset-item"
-              :class="{
-                active: selectedPreset?.name === preset.name,
-                'in-use': activePresetName && preset.name === activePresetName
-              }"
-              @click="selectPreset(preset)"
-            >
-              <div class="preset-item-name-row">
-                <span class="preset-item-name">{{ preset.name }}</span>
-                <Win11Tag v-if="activePresetName === preset.name" size="small" type="success">
-                  {{ t('preset.inUse') }}
-                </Win11Tag>
+            <div class="preset-tags">
+              <span>{{ trackLabel(preset.track) }}</span>
+              <span>{{ preset.carGroup || t('preset.unset') }}</span>
+            </div>
+            <small>{{ formatDate(preset.updatedAt) }}</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="preset-detail">
+        <div v-if="detailLoading" class="detail-state">{{ t('common.loading') }}</div>
+        <template v-else-if="selectedPresetDetails">
+          <div class="detail-heading">
+            <div>
+              <span>{{ selectedIsActive ? t('preset.inUse') : t('preset.selectedPreset') }}</span>
+              <h3>{{ selectedPresetDetails.name }}</h3>
+              <p v-if="selectedPresetDetails.description">{{ selectedPresetDetails.description }}</p>
+            </div>
+            <div class="secondary-menu-wrap">
+              <Win11Button size="small" variant="ghost" :disabled="busy" @click="showSecondaryMenu = !showSecondaryMenu">•••</Win11Button>
+              <div v-if="showSecondaryMenu" class="secondary-menu">
+                <button type="button" @click="openRename">{{ t('preset.renameAction') }}</button>
+                <button type="button" class="danger" @click="requestDelete">{{ t('common.delete') }}</button>
               </div>
-              <div class="preset-item-tags">
-                <Win11Tag size="small" type="primary">
-                  {{ trackLabel(preset.track) }}
-                </Win11Tag>
-                <Win11Tag size="small" type="success">
-                  {{ carGroupLabel(preset.carGroup) }}
-                </Win11Tag>
-              </div>
-              <div class="preset-item-date">
-                {{ formatDate(preset.updatedAt) }}
-              </div>
             </div>
           </div>
-        </div>
 
-        <div class="preset-detail">
-          <div v-if="selectedPreset" class="preset-info">
-            <div class="preset-detail-heading">
-              <div><span class="preset-detail-kicker">{{ selectedPreset.name === activePresetName ? t('preset.inUse') : t('preset.selectedPreset') }}</span><h4>{{ selectedPreset.name }}</h4></div>
-              <span class="preset-state-dot" :class="{ active: selectedPreset.name === activePresetName }"></span>
-            </div>
-            <div class="preset-info-highlight">
-              <span class="preset-highlight-label">{{ t('form.track') }}</span>
-              <Win11Tag type="primary">{{ trackLabel(selectedPreset.track) }}</Win11Tag>
-              <span class="preset-highlight-label">{{ t('form.carGroup') }}</span>
-              <Win11Tag type="success">{{ carGroupLabel(selectedPreset.carGroup) }}</Win11Tag>
-            </div>
-            <p v-if="selectedPreset.description" class="preset-description">
-              {{ selectedPreset.description }}
-            </p>
-            <div class="preset-meta">
-              <div>{{ t('preset.createdAt') }}: {{ formatDateTime(selectedPreset.createdAt) }}</div>
-              <div>{{ t('preset.updatedAt') }}: {{ formatDateTime(selectedPreset.updatedAt) }}</div>
-            </div>
-          </div>
-          <Win11Empty v-else :description="t('preset.emptySelect')" />
-
-          <div class="preset-actions preset-actions-primary">
-            <Win11Button variant="primary" size="large" @click="showSaveDialog">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              {{ t('preset.saveCurrent') }}
-            </Win11Button>
-            <Win11Button
-              variant="success"
-              size="large"
-              :disabled="!selectedPreset"
-              @click="handleLoad"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-              {{ t('preset.loadSelected') }}
-            </Win11Button>
-          </div>
-          <div v-if="selectedPreset" class="overwrite-warning">
-            <strong>{{ t('preset.overwriteTitle') }}</strong>
-            <span>{{ t('preset.updateHint') }}</span>
-          </div>
-          <div class="preset-actions preset-actions-update">
-            <Win11Button
-              variant="warning"
-              :disabled="!selectedPreset"
-              @click="handleUpdatePreset"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {{ t('preset.updateSelected') }}
-            </Win11Button>
+          <div class="summary-grid">
+            <div><span>{{ t('form.track') }}</span><strong>{{ trackLabel(summary.track) }}</strong></div>
+            <div><span>{{ t('form.carGroup') }}</span><strong>{{ summary.carGroup || t('preset.unset') }}</strong></div>
+            <div class="wide"><span>{{ t('preset.sessions') }}</span><strong>{{ summary.sessions || t('preset.unset') }}</strong></div>
+            <div><span>{{ t('preset.weather') }}</span><strong>{{ weatherSummary }}</strong></div>
+            <div><span>{{ t('preset.maxCarSlots') }}</span><strong>{{ summary.maxCarSlots }}</strong></div>
+            <div><span>{{ t('preset.entryCount') }}</span><strong>{{ summary.entryCount }}</strong></div>
+            <div><span>{{ t('preset.mandatoryPitstopCount') }}</span><strong>{{ summary.mandatoryPitstopCount }}</strong></div>
+            <div><span>{{ t('preset.tyreSetCount') }}</span><strong>{{ summary.tyreSetCount }}</strong></div>
+            <div><span>{{ t('preset.bopCount') }}</span><strong>{{ summary.bopCount }}</strong></div>
+            <div><span>{{ t('preset.restrictedAssistCount') }}</span><strong>{{ summary.restrictedAssistCount }}</strong></div>
           </div>
 
-          <div class="preset-actions preset-actions-secondary">
-            <Win11Button :disabled="!selectedPreset" @click="showRenameDialog">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              {{ t('preset.renameAction') }}
-            </Win11Button>
-            <Win11Button variant="danger" :disabled="!selectedPreset" @click="handleDelete">
-              {{ t('common.delete') }}
+          <PresetDiffPanel :diff="comparisonDiff" :title="t('preset.compareCurrent')" />
+
+          <div class="detail-actions">
+            <template v-if="selectedIsActive">
+              <Win11Button v-if="isDirty" variant="primary" :loading="busy" @click="$emit('update-active')">
+                {{ t('preset.saveChanges') }}
+              </Win11Button>
+              <Win11Button v-if="isDirty" variant="secondary" :disabled="busy" @click="$emit('restore-active')">
+                {{ t('preset.restoreSaved') }}
+              </Win11Button>
+              <Win11Button v-else variant="success" disabled>{{ t('preset.currentlyInUse') }}</Win11Button>
+            </template>
+            <Win11Button v-else variant="success" :loading="busy" @click="$emit('apply', selectedPresetDetails.name)">
+              {{ t('preset.applyPreset') }}
             </Win11Button>
           </div>
+        </template>
+        <div v-else class="detail-state">
+          <strong>{{ t('preset.emptySelect') }}</strong>
+          <span>{{ t('preset.previewHint') }}</span>
         </div>
-      </div>
-    </Win11Dialog>
+      </section>
+    </div>
+  </Win11Dialog>
 
-    <Win11Dialog v-model="saveDialogVisible" :title="t('preset.saveDialogTitle')" width="520px">
-      <div class="save-context">
-        <div class="save-context-title">{{ t('preset.saveContextTitle') }}</div>
-        <div class="save-context-row">
-          <span class="save-context-label">{{ t('form.track') }}</span>
-          <Win11Tag type="primary">{{ currentTrackDisplay }}</Win11Tag>
-        </div>
-        <div class="save-context-row">
-          <span class="save-context-label">{{ t('form.carGroup') }}</span>
-          <Win11Tag type="success">{{ currentCarGroupDisplay }}</Win11Tag>
-        </div>
-      </div>
-      <div class="save-form">
-        <div class="win11-form-field">
-          <label class="win11-form-label required">{{ t('preset.presetName') }}</label>
-          <Win11Input v-model="saveForm.name" :placeholder="t('preset.placeholderName')" />
-        </div>
-        <div class="win11-form-field">
-          <label class="win11-form-label">{{ t('preset.description') }}</label>
-          <textarea
-            v-model="saveForm.description"
-            class="win11-textarea"
-            :rows="3"
-            :placeholder="t('preset.placeholderDescription')"
-          ></textarea>
-        </div>
-      </div>
-      <template #footer>
-        <Win11Button variant="secondary" @click="saveDialogVisible = false">{{ t('common.cancel') }}</Win11Button>
-        <Win11Button variant="primary" @click="handleSave">{{ t('common.save') }}</Win11Button>
-      </template>
-    </Win11Dialog>
-
-    <Win11Dialog v-model="renameDialogVisible" :title="t('preset.renameDialogTitle')" width="500px">
-      <div class="save-form">
-        <div class="win11-form-field">
-          <label class="win11-form-label required">{{ t('preset.newName') }}</label>
-          <Win11Input v-model="renameForm.name" :placeholder="t('preset.placeholderNewName')" />
-        </div>
-        <div class="win11-form-field">
-          <label class="win11-form-label">{{ t('preset.description') }}</label>
-          <textarea
-            v-model="renameForm.description"
-            class="win11-textarea"
-            :rows="3"
-            :placeholder="t('preset.placeholderDescriptionEdit')"
-          ></textarea>
-        </div>
-      </div>
-      <template #footer>
-        <Win11Button variant="secondary" @click="renameDialogVisible = false">{{ t('common.cancel') }}</Win11Button>
-        <Win11Button variant="primary" @click="handleRename">{{ t('common.confirm') }}</Win11Button>
-      </template>
-    </Win11Dialog>
-  </div>
+  <Win11Dialog v-model="renameVisible" :title="t('preset.renameDialogTitle')" width="min(500px, calc(100vw - 32px))" :z-index="3100">
+    <div class="rename-form">
+      <label>{{ t('preset.newName') }}</label>
+      <Win11Input v-model="renameName" :placeholder="t('preset.placeholderNewName')" />
+      <label>{{ t('preset.description') }}</label>
+      <textarea v-model="renameDescription" class="win11-textarea" :rows="3"></textarea>
+    </div>
+    <template #footer>
+      <Win11Button variant="secondary" :disabled="busy" @click="renameVisible = false">{{ t('common.cancel') }}</Win11Button>
+      <Win11Button variant="primary" :loading="busy" :disabled="!renameName.trim()" @click="submitRename">{{ t('common.confirm') }}</Win11Button>
+    </template>
+  </Win11Dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, withDefaults } from 'vue'
+import { computed, ref } from 'vue'
 import type { AllConfigs } from '../types/configuration'
 import { formatTrackName } from '../types/defaults'
 import { getCurrentLanguage, t, currentLanguage } from '../i18n'
-import {
-  getPresets,
-  savePreset,
-  loadPreset,
-  updatePreset,
-  renamePreset,
-  deletePreset,
-  type Preset
-} from '../utils/presetManager'
-import {
-  Win11Button,
-  Win11Dialog,
-  Win11Input,
-  Win11Tag,
-  Win11Empty,
-  notify
-} from './win11'
+import type { Preset, PresetWithData } from '../utils/presetManager'
+import { buildConfigDiff, summarizeConfig } from '../utils/configDiff'
+import { Win11Button, Win11Dialog, Win11Input, Win11Tag } from './win11'
+import PresetDiffPanel from './preset/PresetDiffPanel.vue'
 
-const props = withDefaults(
-  defineProps<{
-    configs: AllConfigs
-    activePresetName?: string | null
-  }>(),
-  { activePresetName: null }
-)
-
-const emit = defineEmits<{
-  load: [payload: { configs: AllConfigs; presetName: string }]
-  activePresetChange: [name: string | null]
+const props = defineProps<{
+  modelValue: boolean
+  presets: Preset[]
+  configs: AllConfigs
+  activePresetName: string | null
+  selectedPresetName: string | null
+  selectedPresetDetails: PresetWithData | null
+  isDirty: boolean
+  busy: boolean
+  detailLoading: boolean
 }>()
 
-function trackLabel(track?: string): string {
-  const id = (track || '').trim()
-  if (!id) return t('preset.unset')
-  return formatTrackName(id, getCurrentLanguage())
-}
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean]
+  refresh: []
+  select: [name: string]
+  apply: [name: string]
+  'save-as': []
+  'update-active': []
+  'restore-active': []
+  rename: [payload: { name: string; description: string }]
+  delete: []
+}>()
 
-function trackSearchBlob(track?: string): string {
-  const id = (track || '').trim()
-  if (!id) return ''
-  return `${id} ${formatTrackName(id, 'zh')} ${formatTrackName(id, 'en')}`.toLowerCase()
-}
-
-function carGroupLabel(group?: string): string {
-  const g = (group || '').trim()
-  return g || t('preset.unset')
-}
-
-const dialogVisible = ref(false)
-const saveDialogVisible = ref(false)
-const renameDialogVisible = ref(false)
-
-const presets = ref<Preset[]>([])
-const selectedPreset = ref<Preset | null>(null)
+const visible = computed({ get: () => props.modelValue, set: value => emit('update:modelValue', value) })
 const searchQuery = ref('')
-
-const saveForm = ref({
-  name: '',
-  description: ''
-})
-
-const renameForm = ref({
-  name: '',
-  description: ''
-})
-
-const currentTrackDisplay = computed(() => {
-  void currentLanguage.value
-  const track = (props.configs?.event?.track || '').trim()
-  return track ? formatTrackName(track, getCurrentLanguage()) : t('preset.unset')
-})
-
-const currentCarGroupDisplay = computed(() => {
-  void currentLanguage.value
-  const g = (props.configs?.settings?.carGroup || '').trim()
-  return g || t('preset.unset')
-})
+const showSecondaryMenu = ref(false)
+const renameVisible = ref(false)
+const renameName = ref('')
+const renameDescription = ref('')
 
 const filteredPresets = computed(() => {
   void currentLanguage.value
-  const list = presets.value
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return list
-  return list.filter(p => {
-    const group = carGroupLabel(p.carGroup).toLowerCase()
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.description || '').toLowerCase().includes(q) ||
-      trackSearchBlob(p.track).includes(q) ||
-      group.includes(q)
-    )
-  })
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return props.presets
+  return props.presets.filter(preset => [
+    preset.name,
+    preset.description,
+    preset.track,
+    preset.track ? formatTrackName(preset.track, 'zh') : '',
+    preset.track ? formatTrackName(preset.track, 'en') : '',
+    preset.carGroup
+  ].some(value => (value || '').toLowerCase().includes(query)))
 })
 
-function dateLocale(): string {
-  return getCurrentLanguage() === 'zh' ? 'zh-CN' : 'en-US'
-}
-
-function formatDate(dateStr: string): string {
-  void currentLanguage.value
-  const date = new Date(dateStr)
-  return date.toLocaleDateString(dateLocale())
-}
-
-function formatDateTime(dateStr: string): string {
-  void currentLanguage.value
-  const date = new Date(dateStr)
-  return date.toLocaleString(dateLocale())
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-  if (typeof error === 'string' && error.trim()) {
-    return error
-  }
-  if (typeof error === 'object' && error !== null) {
-    const maybeMessage = (error as { message?: unknown }).message
-    if (typeof maybeMessage === 'string' && maybeMessage.trim()) {
-      return maybeMessage
-    }
-  }
-  return t('common.error')
-}
-
-async function loadPresets() {
-  try {
-    presets.value = await getPresets()
-  } catch (error) {
-    notify.error(`${t('preset.errLoadList')}: ${getErrorMessage(error)}`)
-  }
-}
-
-function selectPreset(preset: Preset) {
-  selectedPreset.value = preset
-}
-
-function showSaveDialog() {
-  saveForm.value.name = ''
-  saveForm.value.description = ''
-  saveDialogVisible.value = true
-}
-
-async function handleSave() {
-  if (!saveForm.value.name.trim()) {
-    notify.warning(t('preset.warnNameRequired'))
-    return
-  }
-
-  try {
-    await savePreset(saveForm.value.name.trim(), saveForm.value.description, props.configs)
-    notify.success(t('preset.successSaved'))
-    saveDialogVisible.value = false
-    await loadPresets()
-  } catch (error) {
-    notify.error(`${t('preset.errSave')}: ${getErrorMessage(error)}`)
-  }
-}
-
-async function handleLoad() {
-  if (!selectedPreset.value) return
-
-  try {
-    const data = await loadPreset(selectedPreset.value.name)
-    const presetName = selectedPreset.value.name
-    emit('load', { configs: data.configs, presetName })
-    notify.success(t('preset.successLoaded'))
-    dialogVisible.value = false
-  } catch (error) {
-    notify.error(`${t('preset.errLoad')}: ${getErrorMessage(error)}`)
-  }
-}
-
-function showRenameDialog() {
-  if (!selectedPreset.value) return
-
-  renameForm.value.name = selectedPreset.value.name
-  renameForm.value.description = selectedPreset.value.description || ''
-  renameDialogVisible.value = true
-}
-
-async function handleRename() {
-  if (!renameForm.value.name.trim()) {
-    notify.warning(t('preset.warnNewNameRequired'))
-    return
-  }
-
-  const oldName = selectedPreset.value!.name
-  const newName = renameForm.value.name.trim()
-
-  try {
-    await renamePreset(oldName, newName, renameForm.value.description)
-    notify.success(t('preset.successRenamed'))
-    renameDialogVisible.value = false
-    if (props.activePresetName === oldName) {
-      emit('activePresetChange', newName)
-    }
-    selectedPreset.value = null
-    await loadPresets()
-  } catch (error) {
-    notify.error(`${t('preset.errRename')}: ${getErrorMessage(error)}`)
-  }
-}
-
-async function handleUpdatePreset() {
-  if (!selectedPreset.value) return
-
-  const name = selectedPreset.value.name
-
-  const confirmed = await notify.confirm({
-    title: t('preset.updateDialogTitle'),
-    message: t('preset.confirmUpdate').replace('{name}', name),
-    confirmText: t('common.update'),
-    cancelText: t('common.cancel'),
-    type: 'warning'
-  })
-
-  if (!confirmed) return
-
-  try {
-    await updatePreset(name, props.configs)
-    notify.success(t('preset.successUpdated'))
-    await loadPresets()
-    const found = presets.value.find(p => p.name === name)
-    selectedPreset.value = found ?? null
-  } catch (error) {
-    notify.error(`${t('preset.errUpdate')}: ${getErrorMessage(error)}`)
-  }
-}
-
-async function handleDelete() {
-  if (!selectedPreset.value) return
-
-  const name = selectedPreset.value.name
-
-  const confirmed = await notify.confirm({
-    title: t('preset.deleteDialogTitle'),
-    message: t('preset.confirmDelete').replace('{name}', name),
-    confirmText: t('common.delete'),
-    cancelText: t('common.cancel'),
-    type: 'warning'
-  })
-
-  if (!confirmed) return
-
-  try {
-    await deletePreset(name)
-    notify.success(t('preset.successDeleted'))
-    if (props.activePresetName === name) {
-      emit('activePresetChange', null)
-    }
-    selectedPreset.value = null
-    await loadPresets()
-  } catch (error) {
-    notify.error(`${t('preset.errDelete')}: ${getErrorMessage(error)}`)
-  }
-}
-
-onMounted(() => {
-  loadPresets()
+const selectedIsActive = computed(() => props.selectedPresetName === props.activePresetName)
+const summary = computed(() => summarizeConfig(props.selectedPresetDetails!.configs))
+const comparisonDiff = computed(() => buildConfigDiff(props.configs, props.selectedPresetDetails!.configs))
+const weatherSummary = computed(() => {
+  const value = summary.value
+  return `${value.ambientTemp}°C · ☁ ${Math.round(value.cloudLevel * 100)}% · ☂ ${Math.round(value.rain * 100)}% · RNG ${Math.round(value.weatherRandomness * 100)}%`
 })
+
+function trackLabel(track?: string) {
+  void currentLanguage.value
+  return track ? formatTrackName(track, getCurrentLanguage()) : t('preset.unset')
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(getCurrentLanguage() === 'zh' ? 'zh-CN' : 'en-US')
+}
+
+function openRename() {
+  showSecondaryMenu.value = false
+  renameName.value = props.selectedPresetDetails?.name || ''
+  renameDescription.value = props.selectedPresetDetails?.description || ''
+  renameVisible.value = true
+}
+
+function submitRename() {
+  if (!renameName.value.trim()) return
+  emit('rename', { name: renameName.value.trim(), description: renameDescription.value.trim() })
+  renameVisible.value = false
+}
+
+function requestDelete() {
+  showSecondaryMenu.value = false
+  emit('delete')
+}
 </script>
 
 <style scoped>
-.preset-overview{display:grid;grid-template-columns:.55fr .55fr 1.9fr;gap:8px;margin-bottom:14px}.preset-overview>div{padding:9px 11px;border:1px solid var(--win11-border);border-radius:8px;background:var(--win11-control-bg)}.preset-overview span{display:block;font-size: var(--type-caption);color:var(--win11-text-secondary)}.preset-overview strong{display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size: var(--type-caption);color:var(--win11-text)}.preset-overview .active{border-color:color-mix(in srgb,#258c5b 35%,var(--win11-border))}.preset-overview .active strong{color:#258c5b}.preset-search-empty{display:flex;min-height:150px;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}.preset-search-empty strong{font-size: var(--type-caption);color:var(--win11-text)}.preset-search-empty span{margin-top:5px;font-size: var(--type-caption);line-height:1.4;color:var(--win11-text-secondary)}.preset-detail-heading{display:flex;align-items:flex-start;justify-content:space-between}.preset-detail-kicker{display:block;margin-bottom:3px;font-size: var(--type-caption);font-weight: var(--weight-emphasis);text-transform:uppercase;letter-spacing:.05em;color:var(--win11-accent)}.preset-state-dot{width:9px;height:9px;border-radius:50%;background:var(--win11-text-secondary)}.preset-state-dot.active{background:#258c5b;box-shadow:0 0 0 4px rgba(37,140,91,.12)}.overwrite-warning{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;padding:9px 11px;border-radius:8px;background:color-mix(in srgb,#d89b3f 10%,var(--win11-control-bg))}.overwrite-warning strong{font-size: var(--type-caption);color:#c9851b}.overwrite-warning span{font-size: var(--type-caption);line-height:1.4;color:var(--win11-text-secondary)}@media(max-width:680px){.preset-overview{grid-template-columns:1fr 1fr}.preset-overview>div:last-child{grid-column:1/-1}}
-.preset-manager {
-  display: flex;
-  height: 500px;
-  gap: 20px;
-}
-
-.preset-list {
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--win11-border);
-  padding-right: 15px;
-}
-
-.preset-list-header {
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--win11-border);
-  margin-bottom: 10px;
-}
-
-.preset-list-content {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.preset-item {
-  padding: 12px 10px;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-  margin-bottom: 4px;
-  border: 1px solid transparent;
-}
-
-.preset-item:hover {
-  background: var(--win11-control-hover-bg);
-}
-
-.preset-item.active {
-  background: var(--win11-control-bg);
-  border-color: var(--win11-accent);
-}
-
-.preset-item.in-use:not(.active) {
-  border-left: 3px solid #67c23a;
-}
-
-.preset-item-name-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.preset-item-name {
-  font-weight: var(--weight-emphasis);
-  color: var(--win11-text);
-}
-
-.preset-item-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.preset-item-date {
-  font-size: var(--type-caption);
-  color: var(--win11-text-secondary);
-}
-
-.preset-detail {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding-left: 10px;
-  min-width: 0;
-}
-
-.preset-info {
-  flex: 1;
-  padding: 15px;
-  background: var(--win11-control-bg);
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.preset-info h4 {
-  margin: 0 0 12px 0;
-  color: var(--win11-text);
-  font-size: var(--type-heading);
-}
-
-.preset-info-highlight {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  margin-bottom: 12px;
-}
-
-.preset-highlight-label {
-  font-size: var(--type-caption);
-  color: var(--win11-text-secondary);
-}
-
-.preset-description {
-  color: var(--win11-text-secondary);
-  font-size: var(--type-body);
-  margin-bottom: 15px;
-  line-height: 1.5;
-}
-
-.preset-meta {
-  font-size: var(--type-caption);
-  color: var(--win11-text-secondary);
-  line-height: 1.8;
-}
-
-.preset-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.preset-actions-primary {
-  margin-bottom: 12px;
-}
-
-.preset-actions-primary :deep(.win11-button) {
-  flex: 1;
-  min-width: 140px;
-}
-
-.preset-actions-update {
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
-}
-
-.update-hint {
-  font-size: var(--type-caption);
-  color: var(--win11-text-secondary);
-  line-height: 1.4;
-  flex: 1;
-  min-width: 160px;
-}
-
-.preset-actions-secondary {
-  padding-top: 4px;
-  border-top: 1px solid var(--win11-border);
-}
-
-.save-context {
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  background: var(--win11-control-bg);
-  border-radius: 8px;
-  border: 1px solid var(--win11-border);
-}
-
-.save-context-title {
-  font-size: var(--type-body);
-  font-weight: var(--weight-emphasis);
-  color: var(--win11-text);
-  margin-bottom: 10px;
-}
-
-.save-context-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.save-context-row:last-child {
-  margin-bottom: 0;
-}
-
-.save-context-label {
-  width: 72px;
-  font-size: var(--type-body);
-  color: var(--win11-text-secondary);
-  flex-shrink: 0;
-}
-
-.save-form {
-  margin-top: 4px;
-}
-
-.win11-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.win11-form-field:last-child {
-  margin-bottom: 0;
-}
-
-.win11-form-label {
-  font-size: var(--type-body);
-  font-weight: var(--weight-emphasis);
-  color: var(--win11-text);
-}
-
-.win11-form-label.required::after {
-  content: ' *';
-  color: #d13438;
-}
-
-.win11-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: var(--type-body);
-  color: var(--win11-text);
-  background: var(--win11-control-bg);
-  border: 1px solid var(--win11-border);
-  border-radius: 6px;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.win11-textarea:focus {
-  border-color: var(--win11-accent);
-}
-
-.win11-textarea::placeholder {
-  color: var(--win11-text-secondary);
-}
+.manager-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.manager-toolbar>div{min-width:0}.manager-toolbar strong{display:block;color:var(--win11-text)}.manager-toolbar span{display:block;margin-top:3px;font-size:var(--type-caption);color:var(--win11-text-secondary)}.preset-manager{display:grid;grid-template-columns:300px minmax(0,1fr);height:min(570px,calc(90vh - 150px));border:1px solid var(--win11-border);border-radius:10px;overflow:hidden}.preset-list{display:flex;flex-direction:column;gap:10px;padding:12px;border-right:1px solid var(--win11-border);min-height:0}.preset-list-content{flex:1;overflow:auto}.preset-item{display:block;width:100%;padding:11px;margin-bottom:5px;text-align:left;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--win11-text);cursor:pointer}.preset-item:hover{background:var(--win11-control-hover-bg)}.preset-item.selected{background:var(--win11-control-bg);border-color:var(--win11-accent)}.preset-item.active:not(.selected){border-left:3px solid #258c5b}.preset-name-row{display:flex;align-items:center;justify-content:space-between;gap:7px}.preset-name-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.preset-tags{display:flex;gap:5px;margin-top:7px}.preset-tags span{max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 6px;border-radius:4px;background:var(--win11-surface);font-size:var(--type-caption);color:var(--win11-text-secondary)}.preset-item small{display:block;margin-top:6px;color:var(--win11-text-secondary)}.preset-empty,.detail-state{display:flex;min-height:180px;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;color:var(--win11-text-secondary)}.preset-empty strong,.detail-state strong{color:var(--win11-text)}.preset-empty span,.detail-state span{font-size:var(--type-caption)}.preset-detail{min-width:0;overflow:auto;padding:17px}.detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.detail-heading>div:first-child{min-width:0}.detail-heading span{font-size:var(--type-caption);font-weight:var(--weight-emphasis);color:var(--win11-accent)}.detail-heading h3{margin:3px 0 0;overflow-wrap:anywhere;color:var(--win11-text)}.detail-heading p{margin:6px 0 0;color:var(--win11-text-secondary)}.secondary-menu-wrap{position:relative}.secondary-menu{position:absolute;right:0;top:34px;z-index:5;min-width:130px;padding:5px;border:1px solid var(--win11-border);border-radius:8px;background:var(--win11-surface);box-shadow:var(--win11-shadow-dialog)}.secondary-menu button{display:block;width:100%;padding:7px 9px;border:0;border-radius:5px;text-align:left;background:transparent;color:var(--win11-text);cursor:pointer}.secondary-menu button:hover{background:var(--win11-control-hover-bg)}.secondary-menu button.danger{color:#d13438}.summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:15px 0}.summary-grid>div{min-width:0;padding:8px 9px;border:1px solid var(--win11-border);border-radius:7px;background:var(--win11-control-bg)}.summary-grid .wide{grid-column:span 2}.summary-grid span{display:block;font-size:var(--type-caption);color:var(--win11-text-secondary)}.summary-grid strong{display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--type-caption);color:var(--win11-text)}.detail-actions{display:flex;gap:9px;margin-top:14px}.rename-form{display:flex;flex-direction:column;gap:8px}.rename-form label{margin-top:8px;font-weight:var(--weight-emphasis);color:var(--win11-text)}.win11-textarea{width:100%;padding:10px 12px;color:var(--win11-text);background:var(--win11-control-bg);border:1px solid var(--win11-border);border-radius:6px;resize:vertical;outline:none}@media(max-width:720px){.manager-toolbar{align-items:flex-start;flex-direction:column}.preset-manager{grid-template-columns:1fr;height:min(680px,calc(90vh - 180px));overflow:auto}.preset-list{max-height:270px;border-right:0;border-bottom:1px solid var(--win11-border)}.preset-detail{overflow:visible}.summary-grid{grid-template-columns:1fr 1fr}.summary-grid .wide{grid-column:1/-1}}
 </style>
